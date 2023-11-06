@@ -14,6 +14,13 @@ Certifique-se de ter a versão mais recente do Node.js e NPM instalada em seu si
 - Front-end: React
 - Back-end: Node.js
 
+## Dependencias
+
+- Front-end: React
+- Back-end: Node.js
+     - npm i express
+     - 
+
 ## Execução na maquina
 
 1. Clone o repositório: `git clone URL-do-Repositório`

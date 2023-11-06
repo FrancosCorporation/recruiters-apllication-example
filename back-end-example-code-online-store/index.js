@@ -1,12 +1,19 @@
-const http = require('http');
+const express = require('express')
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Hello, Node.js Server!\n');
-});
+const app = express()
+const PORT = 4000
 
-const port = 3002;
+app.listen(PORT, () => {
+  console.log(`API listening on PORT ${PORT} `)
+})
 
-server.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
+app.get('/', (req, res) => {
+  res.send('Hey this is my API running 🥳')
+})
+
+app.get('/about', (req, res) => {
+  res.send('This is my about route..... ')
+})
+
+// Export the Express API
+module.exports = app
