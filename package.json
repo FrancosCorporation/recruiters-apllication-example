@@ -1,7 +1,7 @@
 {
     "name": "Exemple Start",
     "scripts": {
-     "start": "npm start --prefix ./front-end-example-code-online-store & npm start --prefix ./back-end"
+     "start": "npm start --prefix ./front-end-example-code-online-store & npm start --prefix ./back-end-example-code-online-store"
     
   }
 }
