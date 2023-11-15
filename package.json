@@ -1,7 +1,9 @@
 {
     "name": "Exemple Start",
     "scripts": {
-     "start": "npm start --prefix ./front-end-example-code-online-store & npm start --prefix ./back-end-example-code-online-store"
-    
-  }
+        "start": "npm start --prefix ./front-end-example-code-online-store & npm start --prefix ./back-end-example-code-online-store"
+    },
+    "dependencies": {
+        "styled-components": "^6.1.1"
+    }
 }

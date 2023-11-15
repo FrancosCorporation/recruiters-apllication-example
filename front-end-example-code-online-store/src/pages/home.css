@@ -1,0 +1,10 @@
+
+.home-container{
+    display: flex;
+    flex-direction: column;
+    font-size: 1.15em;
+    width: 50%;
+  }
+ .home-container p {   
+    font-family: 'varsity';
+}

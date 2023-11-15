@@ -17,40 +17,45 @@ Certifique-se de ter a versão mais recente do Node.js e NPM instalada em seu si
 ## Dependencias
 
 - Front-end: React
+     - npm install @mui/material @mui/icons-material
+     - npm install styled-components
+     - npm install react-router-dom
+     - npm install bootstrap
+     - npm install react-bootstrap bootstrap
+     - npm npm install @mui/material @emotion/react @emotion/styled
+     - npm install react-slick slick-carousel ##
+     
+     
 - Back-end: Node.js
      - npm i express
-     - 
 
-## Execução na maquina
+### Utilização
 
-1. Clone o repositório: `git clone URL-do-Repositório`
-2. Navegue para a pasta do projeto: `cd nome-do-projeto`
-3. Instale as dependências do front-end: `cd frontend && npm install`
+## Execução na maquina com um unico comando 
+
+1. Clone o repositório: `git clone https://github.com/FrancosCorporation/recruiters-apllication-example.git`
+2. Navegue para a pasta do projeto: `cd recruiters-apllication-example`
+3. Instale as ##Dependencias de acordo com os camandos.
 4. Volte para a pasta raiz do projeto: `cd ..`
-5. Instale as dependências do back-end: `cd backend && npm install`
+5. Execute com o comando : `npm start`
 
-## Uso
+## Execução na maquina com comandos em terminais independentes
 
-- Inicie o servidor do front-end: `cd frontend && npm start`
-- Inicie o servidor do back-end: `cd backend && npm start`
+- Inicie o servidor do front-end: `npm start`
+- Inicie o servidor do back-end: `npm start`
 
-Acesse o aplicativo em [http://localhost:3000](http://localhost:3000).
+Acesse o aplicativo em Front = [http://localhost:3000] Back = [http://localhost:3001].
 
-## Contribuição
+## Acessando Remotamente 
 
-Se você deseja contribuir, siga estas etapas:
+Acesse o Front-End = [https://recruiters-apllication-example.vercel.app/]
+Acesse o Back-End = [https://recruiters-apllication-example-h6r1.vercel.app/]
 
-1. Crie um fork do projeto
-2. Crie uma nova branch: `git checkout -b sua-feature`
-3. Faça suas alterações e adicione-as: `git add .`
-4. Faça um commit das alterações: `git commit -m 'Adicione uma nova feature'`
-5. Faça um push da branch: `git push origin sua-feature`
-6. Envie um pull request
 
 ## Licença
 
-Este projeto é licenciado sob a [Sua Licença](URL da Licença).
+Este projeto é licenciado sob o uso para utilização em  [Sua Licença](URL da Licença).
 
 ## Autor
 
-Rodolfo Franco - Consegue acessar atraves do Site = 
+Rodolfo Franco - Consegue acessar atraves do Site = [https://github.com/FrancosCorporation]
