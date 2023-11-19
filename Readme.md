@@ -17,17 +17,32 @@ Certifique-se de ter a versão mais recente do Node.js e NPM instalada em seu si
 ## Dependencias
 
 - Front-end: React
-     - npm install @mui/material @mui/icons-material
-     - npm install styled-components
-     - npm install react-router-dom
-     - npm install bootstrap
-     - npm install react-bootstrap bootstrap
-     - npm npm install @mui/material @emotion/react @emotion/styled
-     - npm install react-slick slick-carousel ##
+     - npm i @mui/material @mui/icons-material
+     - npm i styled-components
+     - npm i react-router-dom
+     - npm i bootstrap
+     - npm i react-bootstrap bootstrap
+     - npm i @mui/material @emotion/react @emotion/styled
+     - npm i react-slick slick-carousel ##
      
      
 - Back-end: Node.js
+     - npm i (Install all dependencies in packges.json)
+     
+     All Dependencies
+
      - npm i express
+     - npm i dotenv
+     - npm i cloudinary
+     - npm i swagger-ui-express
+     - npm i cors
+     - npm i moongose
+     - npm i mongodb
+     - npm i swagger-autogen
+     - npm i swagger-ui-express
+     - npm i uuid
+     - npm i bson
+     - npm i jsonwebtoken
 
 ### Utilização
 
