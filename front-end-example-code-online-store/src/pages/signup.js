@@ -89,37 +89,35 @@ const SignUp = () => {
       setvibility(senhavalidt, 'As senhas não coincidem', true);
       return;
     }
-
-  httpFetch('POST', 'http://localhost:3002/register', {
-    'email': emailvalidt.value, 'password': senhavalidt.value, 'name': namevalidt.value
-  }).then(
-    data => {
-      console.log(data)
-      setvibility(emailvalidt, data.msg, true)
-
-      if (data.status === 422) {
-        // Marcar campos não preenchidos em vermelho
-        if (emailvalidt.value === '') {
-          elementred(emailvalidt)
-        } if (senhavalidt.value === '') {
-          elementred(senhavalidt)
-        } if (namevalidt.value === '') {
-          elementred(namevalidt)
-        } if (confirmsenhavalidt.value === '') {
-          elementred(confirmsenhavalidt)
-        }
-
-      }
-      if (data.status === 201) {
-        setTimeout(() => {
-          // Recarregar a página após 7 segundos
-          window.location.reload();
-        }, 5000);
-      }
+    if (emailvalidt.value === '') {
+      elementred(emailvalidt)
+    } if (senhavalidt.value === '') {
+      elementred(senhavalidt)
+    } if (namevalidt.value === '') {
+      elementred(namevalidt)
+    } if (confirmsenhavalidt.value === '') {
+      elementred(confirmsenhavalidt)
     }
-
-  );
-  };
+    else{
+      httpFetch('POST', 'http://localhost:3002/register', {
+        'email': emailvalidt.value, 'password': senhavalidt.value, 'name': namevalidt.value
+      }).then(
+        data => {
+          console.log(data)
+          setvibility(emailvalidt, data.msg, true)
+    
+          if (data.status === 201) {
+            setTimeout(() => {
+              // Recarregar a página após 7 segundos
+              window.location.reload();
+            }, 5000);
+          }
+        }
+    
+      );
+      };
+    }
+  
   //data.then(data => console.log(data))
 
 

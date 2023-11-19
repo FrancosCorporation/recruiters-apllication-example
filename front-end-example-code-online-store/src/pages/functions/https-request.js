@@ -9,7 +9,7 @@ export async function httpFetch(method, httpredirect, json) {
         });
         return response.json();
     } catch (error) {
-        return ('msg: ', error)
+        return ({ 'msg': 'Servidor indisponivel,\n tente novamente mais tarde' })
     };
 };
 
