@@ -1,15 +1,16 @@
 // App.js
 
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, Outlet } from 'react-router-dom';
-import { AppBar, Toolbar, Button } from '@mui/material';
+import { AppBar, Toolbar, Button, Menu, MenuItem } from '@mui/material';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Home from './pages/home';
 import Login from './pages/login';
 import SignUp from './pages/signup';
 import GeneralItems from './pages/generalitems';
 import PersonalItems from './pages/personalitems';
 import styled from 'styled-components';
-import './pages/global.css'
+import './pages/css/global.css'
 
 const AppContainer = styled.div`
   display: flex;
@@ -41,7 +42,28 @@ const ContentContainer = styled.div`
   
 `;
 
+// ... (importações e código anterior)
+
 const App = () => {
+  const [anchorElGerais, setAnchorElGerais] = useState(null);
+  const [anchorElPessoais, setAnchorElPessoais] = useState(null);
+
+  const handleOpenGerais = (event) => {
+    setAnchorElGerais(event.currentTarget);
+  };
+
+  const handleCloseGerais = () => {
+    setAnchorElGerais(null);
+  };
+
+  const handleOpenPessoais = (event) => {
+    setAnchorElPessoais(event.currentTarget);
+  };
+
+  const handleClosePessoais = () => {
+    setAnchorElPessoais(null);
+  };
+
   return (
     <Router>
       <AppContainer>
@@ -60,12 +82,40 @@ const App = () => {
               <Button color="inherit" component={StyledLink} to="/inscreva-se">
                 Inscreva-se
               </Button>
-              <Button color="inherit" component={StyledLink} to="/itens-gerais">
-                Itens Gerais
+              {/* Itens Gerais */}
+              <Button color="inherit" onClick={handleOpenGerais} aria-haspopup="true">
+                Itens Gerais <ArrowDropDownIcon />
               </Button>
-              <Button color="inherit" component={StyledLink} to="/itens-pessoais">
-                Itens Pessoais
+              <Menu
+                id="itens-gerais-menu"
+                anchorEl={anchorElGerais}
+                open={Boolean(anchorElGerais)}
+                onClose={handleCloseGerais}
+              >
+                <MenuItem component={StyledLink} to="/itens-gerais/listar" onClick={handleCloseGerais}>
+                  Listar
+                </MenuItem>
+                <MenuItem component={StyledLink} to="/itens-gerais/criar" onClick={handleCloseGerais}>
+                  Criar
+                </MenuItem>
+              </Menu>
+              {/* Itens Pessoais */}
+              <Button color="inherit" onClick={handleOpenPessoais} aria-haspopup="true">
+                Itens Pessoais <ArrowDropDownIcon />
               </Button>
+              <Menu
+                id="itens-pessoais-menu"
+                anchorEl={anchorElPessoais}
+                open={Boolean(anchorElPessoais)}
+                onClose={handleClosePessoais}
+              >
+                <MenuItem component={StyledLink} to="/itens-pessoais/listar" onClick={handleClosePessoais}>
+                  Listar
+                </MenuItem>
+                <MenuItem component={StyledLink} to="/itens-pessoais/criar" onClick={handleClosePessoais}>
+                  Criar
+                </MenuItem>
+              </Menu>
             </div>
           </StyledToolbar>
         </StyledAppBar>
@@ -77,8 +127,14 @@ const App = () => {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/inscreva-se" element={<SignUp />} />
-            <Route path="/itens-gerais" element={<GeneralItems />} />
-            <Route path="/itens-pessoais" element={<PersonalItems />} />
+            <Route path="/itens-gerais" element={<GeneralItems />}>
+              <Route path="listar" element={"<ListarItensGerais />"} />
+              <Route path="criar" element={"<CriarItensGerais />"} />
+            </Route>
+            <Route path="/itens-pessoais" element={<PersonalItems />}>
+              <Route path="listar" element={"<ListarItensPessoais />"} />
+              <Route path="criar" element={"<CriarItensPessoais />"} />
+            </Route>
           </Routes>
         </ContentContainer>
       </AppContainer>
