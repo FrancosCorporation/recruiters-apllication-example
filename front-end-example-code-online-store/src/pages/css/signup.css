@@ -25,6 +25,14 @@
     border: 1px solid #ccc;
     border-radius: 5px;
   }
+
+  .asterisk {
+    position: absolute;
+    top: 0.90em;
+    right: -0.1em;
+    color: #FF0000;
+    visibility: hidden;
+}
   
   .submit-button {
     width: 100%;
