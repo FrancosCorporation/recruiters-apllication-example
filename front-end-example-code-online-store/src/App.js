@@ -1,8 +1,12 @@
 // App.js
 
 import React, { useState } from 'react';
+import PersonIcon from '@mui/icons-material/Person';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { BrowserRouter as Router, Route, Routes, Link, Outlet } from 'react-router-dom';
-import { AppBar, Toolbar, Button, Menu, MenuItem } from '@mui/material';
+import { AppBar, Toolbar, Button, Menu, MenuItem, Drawer, MenuList, Avatar, ListItemIcon, ListItemText } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Home from './pages/home';
 import Login from './pages/login';
@@ -10,6 +14,7 @@ import SignUp from './pages/signup';
 import GeneralItems from './pages/generalitems';
 import PersonalItems from './pages/personalitems';
 import styled from 'styled-components';
+import logo from './images/logo.png';
 import './pages/css/global.css'
 
 const AppContainer = styled.div`
@@ -42,11 +47,26 @@ const ContentContainer = styled.div`
   
 `;
 
+const MenuButton = styled(Button)`
+  && {
+    margin-left: auto;
+  }
+`;
+
+const StyledDrawer = styled(Drawer)`
+  width: 250px;
+`;
+
+const StyledAvatar = styled(Avatar)`
+  margin: 16px auto;
+`;
+
 // ... (importações e código anterior)
 
 const App = () => {
   const [anchorElGerais, setAnchorElGerais] = useState(null);
   const [anchorElPessoais, setAnchorElPessoais] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleOpenGerais = (event) => {
     setAnchorElGerais(event.currentTarget);
@@ -64,13 +84,21 @@ const App = () => {
     setAnchorElPessoais(null);
   };
 
+  const handleToggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleMenuClose = () => {
+    setIsMenuOpen(false);
+  };
+
   return (
     <Router>
       <AppContainer>
         <StyledAppBar position="static">
           <StyledToolbar>
             <Button color="inherit" component={StyledLink} to="/">
-              Logo
+              <img src={logo} alt="logo" height={70}/>
             </Button>
             <div>
               <Button color="inherit" component={StyledLink} to="/">
@@ -116,6 +144,9 @@ const App = () => {
                   Criar
                 </MenuItem>
               </Menu>
+              <MenuButton color="inherit" onClick={handleToggleMenu}>
+              <MenuIcon />
+            </MenuButton>
             </div>
           </StyledToolbar>
         </StyledAppBar>
@@ -136,6 +167,36 @@ const App = () => {
               <Route path="criar" element={"<CriarItensPessoais />"} />
             </Route>
           </Routes>
+          {isMenuOpen && (
+            <StyledDrawer anchor="right" open={isMenuOpen} onClose={handleMenuClose}>
+            <MenuList>
+              {/* Adicione a foto do perfil e informações do usuário aqui */}
+              <StyledAvatar>A</StyledAvatar>
+      
+              {/* Opções do menu */}
+              <MenuItem component={StyledLink} to="/perfil" onClick={handleMenuClose}>
+                <ListItemIcon>
+                  <PersonIcon />
+                </ListItemIcon>
+                <ListItemText primary="Perfil" />
+              </MenuItem>
+      
+              <MenuItem component={StyledLink} to="/configuracoes" onClick={handleMenuClose}>
+                <ListItemIcon>
+                  <SettingsIcon />
+                </ListItemIcon>
+                <ListItemText primary="Configurações" />
+              </MenuItem>
+      
+              <MenuItem component={StyledLink} to="/logout" onClick={handleMenuClose}>
+                <ListItemIcon>
+                  <ExitToAppIcon />
+                </ListItemIcon>
+                <ListItemText primary="Sair" />
+              </MenuItem>
+            </MenuList>
+          </StyledDrawer>
+          )}
         </ContentContainer>
       </AppContainer>
     </Router>

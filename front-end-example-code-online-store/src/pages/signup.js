@@ -21,7 +21,7 @@ const Asterisk = styled.span``;
 const InputContainer = styled.div`
   position: relative;
   border:none;
-  width:20em;
+  width:26em;
 `;
 
 const SignUp = () => {
