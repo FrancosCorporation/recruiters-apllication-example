@@ -1,85 +1,15 @@
 const express = require('express')
-const User = require('../models/user')
-const path = require('path')
 const router = express.Router()
+const User = require('../models/user');
 const fs = require('fs');
 const multer = require('multer')
-const uploadPhoto = require('./upload_fotos')
+const uploadPhoto = require('../config/upload_fotos')
 const jwt = require('jsonwebtoken');
 const Comentario = require('../models/comentario');
-const authMiddleware = require('./authMiddleware');
-const bcrypt = require('bcryptjs');
+const authMiddleware = require('../controllers/authMiddleware');
+const { criarNovoUsuario, verificarSeEmailExiste, verificarCredenciais, tragaTodosOsDados, } = require('../controllers/userController');
+
 const meusegredo = process.env.MEUSEGREDO;
-
-
-
-//Users
-
-router.post('/register', async (req, res) => {
-  try {
-    const { email, password, name } = req.body;
-    // Verifique se todos os campos obrigatórios foram fornecidos
-    if (!email || !password || !name) {
-      return res.status(422).json({ msg: "Todos os campos obrigatórios devem ser fornecidos", status: 422, text: 'Unprocessable Entity' });
-    }
-
-    // Verifique se o usuário já existe
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      console.log("User try register :", req.body['email'])
-      return res.status(409).json({ msg: 'Usuário já existe', status: 409, text: 'Conflict' });
-    }
-
-    // Crie um hash da senha usando o bcrypt
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Crie o novo usuário com a senha criptografada
-    const newUser = new User({
-      email,
-      password: hashedPassword,
-      name,
-    });
-
-    // Salve o usuário no banco de dados
-    await newUser.save();
-    console.log("User Registrado :", req.body['email'])
-    res.status(201).json({ msg: 'Usuário registrado com sucesso' ,status: 201, text: 'Create'});
-  } catch (err) {
-    console.log(err, ': ', req.body['email'])
-    res.status(500).json({ msg: 'Erro ao registrar usuário',status: 500, text: 'Internal Error' });
-  }
-});
-
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Verifique se o usuário existe na base de dados
-    const user = await User.findOne({ email }).select('+password');
-
-    if (!user) {
-      return res.status(401).json({ msg: 'Credenciais inválidas' });
-    }
-
-    // Verifique se a senha do usuário foi fornecida
-    if (!password) {
-      return res.status(401).json({ msg: 'Credenciais inválidas' });
-    }
-
-    // Verifique a senha do usuário
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (validPassword) {
-      // Crie um token JWT para o usuário autenticado
-      const token = jwt.sign({ userId: user._id }, meusegredo, { expiresIn: '2h' });
-      // Retorne o token JWT para o cliente
-      res.status(200).json({ token });
-    } else {
-      return res.status(401).json({ msg: 'Credenciais inválidas' });
-    }
-  } catch (error) {
-    res.status(500).json({ msg: 'Erro ao fazer login' });
-  }
-});
 
 // Configuração do multer para o armazenamento temporário da foto
 const storage = multer.diskStorage({
@@ -92,8 +22,72 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
-// Rota para fazer o upload da foto de perfil do usuário
+
+
+router.post('/register', async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+    // Verifique se todos os campos obrigatórios foram fornecidos
+    if (!email || !password || !name) {
+      return res.status(422).json({ msg: "Todos os campos obrigatórios devem ser fornecidos", status: 422, text: 'Unprocessable Entity' });
+    }
+
+    if (verificarSeEmailExiste(email)) {
+      console.log("User try register :", req.body['email'])
+      return res.status(409).json({ msg: 'Usuário já existe', status: 409, text: 'Conflict' });
+    }
+    //registrando o usuario
+    if (criarNovoUsuario(email, password, name)) {
+      console.log("User Registrado :", req.body['email'])
+      res.status(201).json({ msg: 'Usuário registrado com sucesso', status: 201, text: 'Create' });
+    }
+    else {
+      res.status(500).json({ msg: 'Erro interno no servidor', status: 500, text: 'Internal Error' });
+    }
+
+
+  } catch (err) {
+    console.log(err, ': ', req.body['email'])
+    res.status(500).json({ msg: 'Erro ao registrar usuário', status: 500, text: 'Internal Error' });
+  }
+});
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Verifique se o usuário existe na base de dados
+
+
+    const user = await verificarSeEmailExiste(email);
+
+    if (!user) {
+      return res.status(401).json({ msg: 'Credenciais inválidas' });
+    }
+
+
+    // Verifique se a senha do usuário foi fornecida
+    if (!password) {
+      return res.status(401).json({ msg: 'Credenciais inválidas' });
+    }
+
+
+    if (await verificarCredenciais(password, user.password)) {
+      // Crie um token JWT para o usuário autenticado
+      const token = jwt.sign({ userId: user._id }, meusegredo, { expiresIn: '2h' });
+      const dados = {name:user.name , email:user.email, foto:user.photoUrl}
+      // Retorne o token JWT para o cliente
+      res.status(200).json({ token, dados});
+    } else {
+      return res.status(401).json({ msg: 'Credenciais inválidas' });
+    }
+  } catch (error) {
+    res.status(500).json({ msg: 'Erro ao fazer login' });
+  }
+});
+
 router.post('/upload_foto_profile', authMiddleware, upload.single('fotoPerfil'), async (req, res) => {
+
+  // Rota para fazer o upload da foto de perfil do usuário
   try {
 
     if (!req.body.email) {

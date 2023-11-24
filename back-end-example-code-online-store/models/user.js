@@ -24,6 +24,10 @@ const UserSchema = new mongoose.Schema({
         default: diminuir_hora_date_now(3)
 
     },
+    verify:{
+        type: Boolean,
+        default: false
+    },
     photoUrl: {
         type: String,
         default: 'https://res.cloudinary.com/dcqrqv8op/image/upload/v1690175525/fotos_usuarios_grupo_do_ben/1361728_uc4n8n.png',

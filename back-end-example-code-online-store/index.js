@@ -1,6 +1,6 @@
 require('dotenv').config();
 const now = new Date();
-require('./controllers/upload_fotos')
+require('./config/upload_fotos')
 // Convert Date.now() to the time in São Paulo's timezone
 const saoPauloTime = now.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 const swaggerUi = require('swagger-ui-express');
@@ -27,9 +27,9 @@ app.use(cors());
 
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(express.json())
-require('./controllers/authController')(app)
-require('./routes/authRoutes')(app)
-require('./config/db')(app)
+require('./routes/userRoutes')(app);
+require('./routes/postRoutes')(app);
+require('./config/db')(app);
 
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
