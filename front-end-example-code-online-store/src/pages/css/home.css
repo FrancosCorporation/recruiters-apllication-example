@@ -2,8 +2,9 @@
 .home-container{
     display: flex;
     flex-direction: column;
-    font-size: 1.15em;
+    font-size: 1.08em;
     width: 50%;
+    padding-top: 2%;
   }
  .home-container p {   
     font-family: 'varsity';

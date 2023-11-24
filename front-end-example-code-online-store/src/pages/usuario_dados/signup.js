@@ -1,10 +1,11 @@
 // SignUp.js
-import React, { useState } from 'react';
+import React, { useState , useRef} from 'react';
 import styled from 'styled-components';
-import { httpFetch } from './functions/https-request';
-import './css/signup.css'; // Importa o arquivo CSS externo
-import { elementred, setvibility, resetborder } from './functions/uteis'
+import { httpFetch } from '../functions/https-request';
+import '../css/signup.css'; // Importa o arquivo CSS externo
+import { elementred, setvibility, resetborder } from '../functions/uteis'
 
+const httpbase = process.env.REACT_APP_HTTPBASE;
 
 const SignUpContainer = styled.div``;
 
@@ -21,14 +22,13 @@ const Asterisk = styled.span``;
 const InputContainer = styled.div`
   position: relative;
   border:none;
-  width:26em;
 `;
 
 const SignUp = () => {
-  const emailvalidt = document.querySelector('input[placeholder="Email"]')
-  const namevalidt = document.querySelector('input[placeholder="Nome"]')
-  const senhavalidt = document.querySelector('input[placeholder="Senha"]')
-  const confirmsenhavalidt = document.querySelector('input[placeholder="Confirmar Senha"]')
+  const emailvalidt = useRef();
+  const namevalidt = useRef();
+  const senhavalidt = useRef();
+  const confirmsenhavalidt = useRef();
 
   const [emailValue, setEmailValue] = useState('');
   const [nameValue, setNameValue] = useState('');
@@ -45,38 +45,38 @@ const SignUp = () => {
   const handleInputEmailChange = (event) => {
     const novoValor = event.target.value;
     setEmailValue(novoValor);
-    if (emailvalidt !== null) {
-      setvibility(emailvalidt, '', false);
-      resetborder(emailvalidt)
+    if (emailvalidt.current !== null) {
+      setvibility(emailvalidt.current, '', false);
+      resetborder(emailvalidt.current)
     }
   };
 
   const handleInputNameChange = (event) => {
     const novoValor = event.target.value;
     setNameValue(novoValor);
-    if (emailvalidt !== null) {
-      setvibility(emailvalidt, '', false);
-      resetborder(namevalidt)
+    if (emailvalidt.current !== null) {
+      setvibility(emailvalidt.current, '', false);
+      resetborder(namevalidt.current)
     }
   };
 
   const handleInputSenhaChange = (event) => {
     const novoValor = event.target.value;
     setSenhaValue(novoValor);
-    if (emailvalidt !== null) {
-      setvibility(emailvalidt, '', false);
-      setvibility(senhavalidt, '', false);
-      resetborder(senhavalidt)
+    if (emailvalidt.current !== null) {
+      setvibility(emailvalidt.current, '', false);
+      setvibility(senhavalidt.current, '', false);
+      resetborder(senhavalidt.current)
     }
   };
 
   const handleInputConfirmSenhaChange = (event) => {
     const novoValor = event.target.value;
     setConfirmSenhaValue(novoValor);
-    if (emailvalidt !== null) {
-      setvibility(emailvalidt, '', false);
-      setvibility(senhavalidt, '', false);
-      resetborder(confirmsenhavalidt)
+    if (emailvalidt.current !== null) {
+      setvibility(emailvalidt.current, '', false);
+      setvibility(senhavalidt.current, '', false);
+      resetborder(confirmsenhavalidt.current)
     }
   };
 
@@ -86,30 +86,30 @@ const SignUp = () => {
 
     if (senhaValue !== confirmsenhaValue) {
       // Exibe uma mensagem de erro ou toma outra ação apropriada
-      setvibility(senhavalidt, 'As senhas não coincidem', true);
+      setvibility(senhavalidt.current, 'As senhas não coincidem', true);
       return;
     }
-    if (emailvalidt.value === '') {
-      elementred(emailvalidt)
-    } if (senhavalidt.value === '') {
-      elementred(senhavalidt)
-    } if (namevalidt.value === '') {
-      elementred(namevalidt)
-    } if (confirmsenhavalidt.value === '') {
-      elementred(confirmsenhavalidt)
+    if (emailvalidt.current.value === '') {
+      elementred(emailvalidt.current)
+    } if (senhavalidt.current.value === '') {
+      elementred(senhavalidt.current)
+    } if (namevalidt.current.value === '') {
+      elementred(namevalidt.current)
+    } if (confirmsenhavalidt.current.value === '') {
+      elementred(confirmsenhavalidt.current)
     }
     else{
-      httpFetch('POST', 'http://localhost:3002/register', {
-        'email': emailvalidt.value, 'password': senhavalidt.value, 'name': namevalidt.value
+      httpFetch('POST', httpbase+'/register', {
+        'email': emailvalidt.current.value, 'password': senhavalidt.current.value, 'name': namevalidt.current.value
       }).then(
         data => {
           console.log(data)
-          setvibility(emailvalidt, data.msg, true)
+          setvibility(emailvalidt.current, data.msg, true)
     
           if (data.status === 201) {
             setTimeout(() => {
               // Recarregar a página após 7 segundos
-              window.location.reload();
+              window.location.href = '/login';
             }, 5000);
           }
         }

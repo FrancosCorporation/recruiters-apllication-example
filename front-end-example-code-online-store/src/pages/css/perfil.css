@@ -1,0 +1,7 @@
+.container{
+    padding-top: 7%;
+}
+.box_save{
+    display: flex !important;
+    justify-content: center !important;
+}

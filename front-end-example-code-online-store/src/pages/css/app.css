@@ -1,0 +1,14 @@
+body .Avatar-profile {
+    margin: 16px auto;
+    background-color: black;
+    border-radius: 50%;
+}
+
+.containerPai {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 10vh;
+    z-index: 0;
+}

@@ -4,6 +4,8 @@
     align-items: center;
     justify-content: center;
     max-width: 30%;
+    padding-top: 7%;
+    width: 26.5vw;
   }
   
   .sign-up-form {
@@ -35,7 +37,7 @@
 }
   
   .submit-button {
-    width: 100%;
+    width: 20.5vw !important;
     padding: 10px;
     background-color: #bfddf3;
     color: #fff;
