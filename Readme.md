@@ -71,7 +71,7 @@ Acesse o aplicativo em Front = [http://localhost:3000] Back = [http://localhost:
 ## Acessando Remotamente
 
 Acesse o Front-End = [https://recruiters-apllication-example.vercel.app/]
-Acesse o Back-End = [https://recruiters-apllication-example-h6r1.vercel.app/]
+Acesse o Back-End = [https://recruiters-apllication-example-backend.vercel.app/]
 
 ## Autor
 
