@@ -31,8 +31,8 @@ router.post('/register', async (req, res) => {
     if (!email || !password || !name) {
       return res.status(422).json({ msg: "Todos os campos obrigatórios devem ser fornecidos", status: 422, text: 'Unprocessable Entity' });
     }
-
-    if (verificarSeEmailExiste(email)) {
+    
+    if (await verificarSeEmailExiste(email)) {
       console.log("User try register :", req.body['email'])
       return res.status(409).json({ msg: 'Usuário já existe', status: 409, text: 'Conflict' });
     }
