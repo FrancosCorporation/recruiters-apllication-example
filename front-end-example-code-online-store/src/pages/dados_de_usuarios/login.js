@@ -63,7 +63,6 @@ const Login = () => {
       elementred(senhavalidt.current)
     }
     else {
-      console.log(httpbase)
       httpFetch('POST', httpbase + '/login', {
         'email': emailvalidt.current.value, 'password': senhavalidt.current.value
       }).then(

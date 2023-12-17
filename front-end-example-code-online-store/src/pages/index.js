@@ -79,6 +79,7 @@ const index = () => {
             <Route path="/inscreva-se" element={<SignUp />} />
             <Route path="/itens-gerais" element={<GeneralItems />} />
             <Route path="/itens-pessoais" element={<PersonalItems />} />
+            <Route path="/token" element={<h3>token</h3>} />
           </Routes>
         </ContentContainer>
       </AppContainer>

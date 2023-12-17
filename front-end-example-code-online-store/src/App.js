@@ -8,14 +8,15 @@ import { AppBar, Toolbar, Button, Menu, MenuItem } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Home from './pages/home';
-import Login from './pages/usuario_dados/login';
-import SignUp from './pages/usuario_dados/signup';
+import Login from './pages/dados_de_usuarios/login';
+import SignUp from './pages/dados_de_usuarios/signup';
 import GeneralItems from './pages/generalitems';
 import PersonalItems from './pages/personalitems';
 import styled from 'styled-components';
 import logo from './images/logo.png';
-import MenuLateral from './pages/usuario_dados/menu-lateral';
-import Perfil from './pages/usuario_dados/pefil';
+import MenuLateral from './pages/dados_de_usuarios/menu-lateral';
+import Perfil from './pages/dados_de_usuarios/pefil';
+import ConfirmToken from './pages/dados_de_usuarios/confirmToken';
 
 
 
@@ -139,6 +140,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/token" element={<ConfirmToken />} />
         <Route path="/inscreva-se" element={<SignUp />} />
         <Route path="/itens-gerais" element={<GeneralItems />}>
           <Route path="listar" element={"<ListarItensGerais />"} />

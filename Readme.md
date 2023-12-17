@@ -36,6 +36,7 @@ Certifique-se de ter a versão mais recente do Node.js e NPM instalada em seu si
 
   All Dependencies
 
+- npm i google-auth-library
 - npm i express
 - npm i dotenv
 - npm i cloudinary
@@ -46,8 +47,9 @@ Certifique-se de ter a versão mais recente do Node.js e NPM instalada em seu si
 - npm i swagger-autogen
 - npm i swagger-ui-express
 - npm i uuid
-- npm i bson
-- npm i jsonwebtoken
+- npm i bson (convert more data)
+- npm i jsonwebtoken (Token)
+- npm i nodemailer (email sending)
 
 ### Utilização
 

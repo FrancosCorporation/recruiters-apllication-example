@@ -1,0 +1,28 @@
+.container{
+height: 99vh;
+width: 99.1vw;
+}
+.notification-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 7rem;
+  
+}
+
+.notification {
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #282c34;
+  color: white;
+  text-align: center;
+  animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}

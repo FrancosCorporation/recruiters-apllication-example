@@ -4,10 +4,10 @@ const User = require('../models/user');
 const fs = require('fs');
 const multer = require('multer')
 const uploadPhoto = require('../config/upload_fotos')
-const jwt = require('jsonwebtoken');
 const Comentario = require('../models/comentario');
 const authMiddleware = require('../controllers/authMiddleware');
-const { criarNovoUsuario, verificarSeEmailExiste, verificarCredenciais, tragaTodosOsDados, } = require('../controllers/userController');
+const { criarNovoUsuario, verificarSeEmailExiste, verificarCredenciais, tragaTodosOsDados, sendEmail, gerarToken, } = require('../controllers/userController');
+const { verifyTokenValid } = require('../controllers/tokenController');
 
 const meusegredo = process.env.MEUSEGREDO;
 
@@ -39,6 +39,7 @@ router.post('/register', async (req, res) => {
     //registrando o usuario
     if (criarNovoUsuario(email, password, name)) {
       console.log("User Registrado :", req.body['email'])
+      await sendEmail(email,name)
       res.status(201).json({ msg: 'Usuário registrado com sucesso', status: 201, text: 'Create' });
     }
     else {
@@ -72,8 +73,8 @@ router.post('/login', async (req, res) => {
 
 
     if (await verificarCredenciais(password, user.password)) {
-      // Crie um token JWT para o usuário autenticado
-      const token = jwt.sign({ userId: user._id }, meusegredo, { expiresIn: '2h' });
+      // gerando token JWT para o usuário autenticado
+      gerarToken(user.id,meusegredo,'2h')
       const dados = {name:user.name , email:user.email, foto:user.photoUrl}
       // Retorne o token JWT para o cliente
       res.status(200).json({ token, dados});
@@ -173,6 +174,20 @@ router.post('/comentarios', authMiddleware, async (req, res) => {
       console.error(error)
       return res.status(500).json({ msg: 'Erro interno do servidor.' });
     }
+  }
+});
+
+router.post('/token', async (req, res) => {
+  try {
+    const { token } = req.body;
+    if(verifyTokenValid(token,meusegredo)){
+      return res.status(200).json({ msg: 'Ativação da conta foi um sucesso! 🎉' });
+    }
+    else{
+      return res.status(400).json({ msg: 'Token inválido. Entre em contato com o suporte !' });
+    }
+  } catch (error) {
+    return res.status(500).json({ msg: 'Erro interno do servidor.' });
   }
 });
 

@@ -9,8 +9,12 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const app = express()
 const cors = require('cors');
+const { sendEmail } = require('./controllers/userController');
+const { gerarTokenSimple, verifyTokenValid } = require('./controllers/tokenController');
 const port = process.env.PORT;
-const IP = process.env.IP_MACHINE;
+const baseUrl = process.env.BASEURL;
+//const IP = process.env.IP_MACHINE;
+//const meusegredo = process.env.MEUSEGREDO;
 
 app.use(bodyParser.json())
 
@@ -30,12 +34,14 @@ app.use(express.json())
 require('./routes/userRoutes')(app);
 require('./routes/postRoutes')(app);
 require('./config/db')(app);
-
-
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
+
+//sendEmail('rodolfofranco14@hotmail.com','rodolfo')
+
+
 app.listen(port, () => {
-  console.log(`Servidor rodando desde a: ${saoPauloTime} no endereço:  http://localhost${":"+port}`);
+  console.log(`Servidor rodando desde a: ${saoPauloTime} no endereço:  ${baseUrl+":"+port}`);
 });
 
 
