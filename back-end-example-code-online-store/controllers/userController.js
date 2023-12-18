@@ -99,7 +99,7 @@ async function sendEmail(email, name) {
   //]
 
   // Envie o e-mail
-  transporter.sendMail(mailOptions, (error, info) => {
+  await transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       console.log(error)
       console.log('erro na hora de enviar o email')
@@ -110,8 +110,6 @@ async function sendEmail(email, name) {
   });
 
 }
-
-
 
 
 
