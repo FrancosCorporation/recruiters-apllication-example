@@ -101,7 +101,8 @@ async function sendEmail(email, name) {
   // Envie o e-mail
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
-      console.error(error)
+      console.log(error)
+      console.log('erro na hora de enviar o email')
     }
     else {
       console.log('E-mail enviado com sucesso!');
