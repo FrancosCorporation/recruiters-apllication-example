@@ -38,8 +38,8 @@ router.post('/register', async (req, res) => {
     }
     //registrando o usuario
     if (criarNovoUsuario(email, password, name)) {
-      console.log("User Registrado :", req.body['email'])
-      sendEmail(email,name)
+      console.log("User Registrado :", req.body['email']);
+      await sendEmail(email,name);
       res.status(201).json({ msg: 'Usuário registrado com sucesso', status: 201, text: 'Create' });
     }
     else {

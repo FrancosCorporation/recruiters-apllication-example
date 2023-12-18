@@ -73,7 +73,7 @@ async function sendEmail(email, name) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     //host: 'smtp.gmail.com',
-    port: 587,
+    //port: 587,
     //port: 465,
     auth: {
       user: emaillogin,  // Substitua pelo seu nome de usuário
