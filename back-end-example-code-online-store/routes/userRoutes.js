@@ -3,25 +3,17 @@ const router = express.Router()
 const User = require('../models/user');
 const fs = require('fs');
 const multer = require('multer')
+const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Types;
 const uploadPhoto = require('../config/upload_fotos')
 const Comentario = require('../models/comentario');
 const authMiddleware = require('../controllers/authMiddleware');
-const { criarNovoUsuario, verificarSeEmailExiste, verificarCredenciais, tragaTodosOsDados, sendEmail, gerarToken, } = require('../controllers/userController');
-const { verifyTokenValid } = require('../controllers/tokenController');
+const { criarNovoUsuario, verificarSeEmailExiste, verificarCredenciais, sendEmail, deletarUsuario } = require('../controllers/userController');
+const { verifyTokenValid, gerarTokenWithExpireddataAndData } = require('../controllers/tokenController');
 
 const meusegredo = process.env.MEUSEGREDO;
 
-// Configuração do multer para o armazenamento temporário da foto
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads'); // Pasta onde os arquivos serão salvos temporariamente
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname); // Nome do arquivo no formato data-nomeOriginal
-  }
-});
 
-const upload = multer({ storage: storage });
 
 
 router.post('/register', async (req, res) => {
@@ -31,7 +23,7 @@ router.post('/register', async (req, res) => {
     if (!email || !password || !name) {
       return res.status(422).json({ msg: "Todos os campos obrigatórios devem ser fornecidos", status: 422, text: 'Unprocessable Entity' });
     }
-    
+
     if (await verificarSeEmailExiste(email)) {
       console.log("User try register :", req.body['email'])
       return res.status(409).json({ msg: 'Usuário já existe', status: 409, text: 'Conflict' });
@@ -39,16 +31,19 @@ router.post('/register', async (req, res) => {
     //registrando o usuario
     if (criarNovoUsuario(email, password, name)) {
       console.log("User Registrado :", req.body['email']);
-      await sendEmail(email,name);
+      //enviando email de confirmação !
+      //await sendEmail(email, name);
       res.status(201).json({ msg: 'Usuário registrado com sucesso', status: 201, text: 'Create' });
     }
     else {
+      deletarUsuario(email)
       res.status(500).json({ msg: 'Erro interno no servidor', status: 500, text: 'Internal Error' });
     }
 
 
   } catch (err) {
     console.log(err, ': ', req.body['email'])
+    deletarUsuario(email)
     res.status(500).json({ msg: 'Erro ao registrar usuário', status: 500, text: 'Internal Error' });
   }
 });
@@ -70,14 +65,16 @@ router.post('/login', async (req, res) => {
     if (!password) {
       return res.status(401).json({ msg: 'Credenciais inválidas' });
     }
-
+    if (!user.verify) {
+      return res.status(401).json({ msg: 'Precisamos que confirme seu email, caso necessario olhe na caixa de spam!' });
+    }
 
     if (await verificarCredenciais(password, user.password)) {
       // gerando token JWT para o usuário autenticado
-      gerarToken(user.id,meusegredo,'2h')
-      const dados = {name:user.name , email:user.email, foto:user.photoUrl}
+      const token = gerarTokenWithExpireddataAndData({ 'Id': user.id }, meusegredo, '2h')
+      const dados = { name: user.name, email: user.email, foto: user.photoUrl }
       // Retorne o token JWT para o cliente
-      res.status(200).json({ token, dados});
+      res.status(200).json({ token, dados, msg: 'Obrigado pela verificação !' });
     } else {
       return res.status(401).json({ msg: 'Credenciais inválidas' });
     }
@@ -86,31 +83,43 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.post('/upload_foto_profile', authMiddleware, upload.single('fotoPerfil'), async (req, res) => {
+// Configuração do multer para o armazenamento temporário da foto
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './uploads'); // Pasta onde os arquivos serão salvos temporariamente
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname); // Nome do arquivo no formato data-nomeOriginal
+  }
+});
+
+const upload = multer({ storage: storage });
+
+router.post('/uploadPhotoProfile', authMiddleware, upload.single('fotoPerfil'), async (req, res) => {
+
 
   // Rota para fazer o upload da foto de perfil do usuário
   try {
-
     if (!req.body.email) {
-      return res.status(406).json({ msg: 'Campo email é obrigatório' });
+      return res.status(406).json({ status: 406, msg: 'Campo email é obrigatório' });
     }
-
     // Verifique se o usuário existe no banco de dados
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
-      return res.status(404).json({ msg: 'Usuário não encontrado' });
+      return res.status(404).json({ status: 404, msg: 'Usuário não encontrado' });
     }
 
     // Verifique se a foto de perfil foi fornecida na requisição
     if (!req.file) {
-      return res.status(400).json({ msg: 'Foto de perfil não fornecida' });
+      return res.status(400).json({ status: 400, msg: 'Foto de perfil não fornecida' });
     }
 
     const tempPath = req.file.path;
+    // Verifique se o arquivo é uma imagem válida
+
 
     // Enviar a foto para o Cloudinary
     const photoUrl = await uploadPhoto(tempPath);
-
 
     // Apagar a foto temporária do servidor para liberar espaço
     fs.unlinkSync(tempPath);
@@ -119,10 +128,35 @@ router.post('/upload_foto_profile', authMiddleware, upload.single('fotoPerfil'),
     user.photoUrl = photoUrl;
     await user.save();
 
-    res.json({ message: 'Upload da foto de perfil concluído' });
+    return res.status(200).json({ status: 200, msg: 'Upload da foto de perfil concluído' });
   } catch (error) {
     console.error('Erro ao fazer o upload da foto:', error);
-    res.status(500).json({ msg: 'Erro ao fazer o upload da foto' });
+    return res.status(500).json({ status: 500, msg: 'Erro ao fazer o upload da foto' });
+  }
+
+});
+
+router.post('/putProfile', authMiddleware, async (req, res) => {
+  // Rota para mudar alterações do nome, email e senha
+  try {
+    const user = await User.findOne({ _id: req.user.Id });
+
+    if (req.body.email && req.body.senha && req.body.nome) {
+      // Atualiza os campos no documento do usuário
+      user.email = req.body.email;
+      user.name = req.body.nome;
+      user.password = req.body.senha;
+
+      // Aguarda a conclusão da operação de save antes de enviar uma resposta
+      await user.save();
+
+      return res.status(200).json({ status: 200, msg: `Alterações no usuário ${user.name} foram feitas com sucesso!` });
+    } else {
+      return res.status(406).json({ status: 406, msg: 'Faltam campos a serem preenchidos!' });
+    }
+  } catch (error) {
+    console.error('Erro ao fazer alterações no usuário:' + req.body.nome, error);
+    return res.status(500).json({ status: 500, msg: 'Erro ao fazer alterações no usuário:' + req.body.nome });
   }
 });
 
@@ -180,10 +214,16 @@ router.post('/comentarios', authMiddleware, async (req, res) => {
 router.post('/token', async (req, res) => {
   try {
     const { token } = req.body;
-    if(verifyTokenValid(token,meusegredo)){
-      return res.status(200).json({ msg: 'Ativação da conta foi um sucesso! 🎉' });
+    const validity = verifyTokenValid(token, meusegredo)
+    if (validity !== null) {
+      const email = validity.email
+      const user = await User.findOne({ email });
+      user.verify = true
+      await user.save();
+
+      return res.status(200).json({ msg: 'Ativação da conta foi um sucesso! 🎉 Faça Login !' });
     }
-    else{
+    else {
       return res.status(400).json({ msg: 'Token inválido. Entre em contato com o suporte !' });
     }
   } catch (error) {
