@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import '../css/login.css';
 import { httpFetch } from '../functions/https-request';
 import { elementred, resetborder, setvibility } from '../functions/uteis';
-import {  encryptData } from '../functions/security';
+import { encryptData } from '../functions/security';
 
 
 const httpbase = process.env.REACT_APP_HTTPBASE;
@@ -65,37 +65,38 @@ const Login = () => {
     else {
       httpFetch('POST', httpbase + '/login', {
         'email': emailvalidt.current.value, 'password': senhavalidt.current.value
-      }).then(
-        data => {
-          console.log(data)
-          if (data.token != null) {
-            console.log(data.dados)
-            // Armazenar o token em algum lugar seguro, como localStorage ou cookies
-            // Aqui, estou armazenando no localStorage para fins de exemplo
-            localStorage.setItem('token', encryptData(data.token, secretkey));
-            localStorage.setItem('dados', encryptData(data.dados, secretkey));
+      })
+        .then(
+          data => {
+            if (data.token != null) {
+              // Armazenar o token em algum lugar seguro, como localStorage ou cookies
+              // Aqui, estou armazenando no localStorage para fins de exemplo
+              localStorage.setItem('token', encryptData(data.token, secretkey));
+              //sao dados do usuario como email , nome e foto do perfil
+              localStorage.setItem('dados', encryptData(data.dados, secretkey));
+              setvibility(emailvalidt.current, data.msg, true)
 
-            // Recuperar e descriptografar os dados do localStorage
-            //const dadosArmazenados = localStorage.getItem('dados');
-            //const dadosDescriptografados = decryptData(dadosArmazenados, secret);
+              // Recuperar e descriptografar os dados do localStorage
+              //const dadosArmazenados = localStorage.getItem('dados');
+              //const dadosDescriptografados = decryptData(dadosArmazenados, secret);
 
-            //console.log(dadosDescriptografados);
-            // Redirecionar o usuário para a página "/primeirasmordidas.html"
-            //window.location.href = '/';
-          } else {
-            setvibility(emailvalidt.current, data.msg, true)
+              //console.log(dadosDescriptografados);
+              // Redirecionar o usuário para a página "/primeirasmordidas.html"
+              //window.location.href = '/';
+            } else {
+              setvibility(emailvalidt.current, data.msg, true)
+            }
+
+
+            if (data.status === 201) {
+              setTimeout(() => {
+                // Recarregar a página após 7 segundos
+                window.location.reload();
+              }, 5000);
+            }
           }
 
-
-          if (data.status === 201) {
-            setTimeout(() => {
-              // Recarregar a página após 7 segundos
-              window.location.reload();
-            }, 5000);
-          }
-        }
-
-      );
+        );
     }
   };
 

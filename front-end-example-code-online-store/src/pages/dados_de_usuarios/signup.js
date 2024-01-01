@@ -42,15 +42,6 @@ const SignUp = () => {
     }
   };
 
-  const handleInputEmailChange = (event) => {
-    const novoValor = event.target.value;
-    setEmailValue(novoValor);
-    if (emailvalidt.current !== null) {
-      setvibility(emailvalidt.current, '', false);
-      resetborder(emailvalidt.current)
-    }
-  };
-
   const handleInputNameChange = (event) => {
     const novoValor = event.target.value;
     setNameValue(novoValor);
@@ -60,6 +51,17 @@ const SignUp = () => {
     }
   };
 
+
+  const handleInputEmailChange = (event) => {
+    const novoValor = event.target.value;
+    setEmailValue(novoValor);
+    if (emailvalidt.current !== null) {
+      setvibility(emailvalidt.current, '', false);
+      resetborder(emailvalidt.current)
+    }
+  };
+
+  
   const handleInputSenhaChange = (event) => {
     const novoValor = event.target.value;
     setSenhaValue(novoValor);
@@ -103,7 +105,6 @@ const SignUp = () => {
         'email': emailvalidt.current.value, 'password': senhavalidt.current.value, 'name': namevalidt.current.value
       }).then(
         data => {
-          console.log(data)
           setvibility(emailvalidt.current, data.msg, true)
     
           if (data.status === 201) {

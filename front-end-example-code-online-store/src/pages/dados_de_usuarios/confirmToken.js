@@ -1,42 +1,37 @@
 // ConfirmToken.jsx
-import React, {useState } from 'react';
+import React, {useState, useEffect } from 'react';
 import '../css/confirmToken.css';
 import { httpFetch } from '../functions/https-request';
-const httpbase = process.env.REACT_APP_HTTPBASE;
+const httpbase = process.env.REACT_APP_HTTPBASE;// Substitua isso pelo caminho real da sua biblioteca HTTP
 
 const ConfirmToken = () => {
-
-    // Estado para armazenar a mensagem
     const [message, setMessage] = useState('Token inválido. Entre em contato com o suporte !');
-    // Obter os parâmetros da consulta
-    var queryString = window.location.search;
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Criar um objeto URLSearchParams para facilitar a manipulação dos parâmetros
-    var urlParams = new URLSearchParams(queryString);
+    useEffect(() => {
+        // Obter os parâmetros da consulta
+        var queryString = window.location.search;
+        var urlParams = new URLSearchParams(queryString);
+        var token = urlParams.get('token');
 
-    // Obter o valor do parâmetro 'nome'
-    var token = urlParams.get('token');
-
-    httpFetch('POST', httpbase + '/token', {
-        'token': token
-    }).then(
-        data => {
-            // Atualizar o estado com a mensagem recebida
-            setMessage(data.msg);
-
-        }
-
-    );
-    setTimeout(() => {
-        // Recarregar a página após 7 segundos
-        //window.location.href = '/';
-    }, 5000);
+        httpFetch('POST', `${httpbase}/token`, { 'token': token })
+            .then(data => {
+                setMessage(data.msg);
+            })
+            .catch(error => {
+                console.error('Erro na solicitação:', error);
+                setMessage('Erro ao processar o token. Entre em contato com o suporte!');
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
+    }, []); // O segundo parâmetro vazio garante que o efeito seja executado apenas uma vez, equivalente ao componentDidMount
 
     return (
         <div className="container">
             <div className="notification-container">
                 <div className="notification">
-                    <h1>{message}</h1>
+                    {isLoading ? <p>Verificando token...</p> : <h1>{message}</h1>}
                 </div>
             </div>
         </div>
