@@ -1,0 +1,51 @@
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.container-pai {
+  position: fixed !important;
+  background-color: rgba(0, 0, 0, 0.70);
+  z-index: 1;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.messagecontainer {
+  display: flex;
+  border-radius: '1.563rem';
+  font-size: 1.1rem;
+  width: calc(100vw/3);
+  height: calc(100vh/3);
+  font-family: 'Oswald', sans-serif;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.text-container {
+  
+}
+
+
+.buttonclose {
+ position: absolute;
+ right: 0;
+ top: 0;
+ background-color: black;
+ color: azure;
+}

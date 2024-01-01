@@ -5,3 +5,6 @@
     display: flex !important;
     justify-content: center !important;
 }
+.TextField{
+    width: 100%;
+}
