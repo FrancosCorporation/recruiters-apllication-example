@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-const Home = () => {
+const Generalitens = () => {
   return (
     <div>
       <h2>Pode ser criado qualquer tipo de item sem permisoes
@@ -10,5 +10,13 @@ const Home = () => {
     </div>
   );
 };
+const vasa = () => {
+  return (
+    <div>
+      <h2>vasasd
+      </h2>
+    </div>
+  );
+};
 
-export default Home;
+export { Generalitens,vasa};
