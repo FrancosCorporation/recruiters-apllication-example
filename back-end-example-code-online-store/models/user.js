@@ -1,9 +1,11 @@
+const { UUID } = require('bson');
 const mongoose = require('mongoose');
-const { v4: uuidv4 } = require('uuid');
-
 
 const UserSchema = new mongoose.Schema({
-    
+    _id:{
+        type: String,
+        default: new UUID
+    },
     name: {
         type: String,
         require: true,

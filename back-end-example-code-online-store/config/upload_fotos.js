@@ -15,7 +15,7 @@ async function uploadPhoto(file) {
   try {
     // Use o método .upload() do Cloudinary para fazer o upload da foto
     const result = await cloudinary.uploader.upload(file, {
-      folder: 'fotos_usuarios_grupo_do_ben' // Pasta no Cloudinary para armazenar as fotos dos usuários
+      folder: 'fotos_usuarios_recruters_examples' // Pasta no Cloudinary para armazenar as fotos dos usuários
     });
 
     // A URL pública da foto estará em result.secure_url

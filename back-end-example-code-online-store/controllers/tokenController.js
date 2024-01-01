@@ -1,21 +1,9 @@
 const jwt = require('jsonwebtoken');
 
-function gerarTokenWithExpireddataAndData(userId, meusegredo, dataExpiredHours) {
+function gerarTokenWithExpireddataAndData(userInfo, meusegredo, dataExpiredHours) {
     try {
         // Crie um token JWT para o usuário autenticado
-        const token = jwt.sign({ userId: userId }, meusegredo, { expiresIn: dataExpiredHours });
-        console.log(token)
-        return token;
-
-    } catch (error) {
-        console.log(error)
-        return false;
-    }
-}
-function gerarTokenSimple(meusegredo) {
-    try {
-        // Crie um token JWT para o usuário autenticado
-        const token = jwt.sign({}, meusegredo, {});
+        const token = jwt.sign(userInfo, meusegredo, { expiresIn: dataExpiredHours });
         return token;
 
     } catch (error) {
@@ -25,26 +13,25 @@ function gerarTokenSimple(meusegredo) {
 }
 function verifyTokenValid(token, secretKey) {
     try {
+        const internaltoken = jwt.verify(token, secretKey)
         // Verifica se o token é válido
-        if (jwt.verify(token, secretKey)) {
-
+        if (internaltoken !== null) {
             // Se chegou até aqui, o token é válido
-            return true;
+            return { 'email': internaltoken.email };
         }
         else {
-            return false;
+            return { 'email': null };
         }
 
     } catch (error) {
         // Se ocorrer algum erro ao verificar o token, ele é considerado inválido
-        console.log('Alguem enviou um token ou secret key errada para validação.');
-        return false;
+        console.log('Alguem enviou um token errado para validação.');
+        return { 'email': null };
     }
 }
 
 
 module.exports = {
     gerarTokenWithExpireddataAndData,
-    gerarTokenSimple,
     verifyTokenValid,
 };

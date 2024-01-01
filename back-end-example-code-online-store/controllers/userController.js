@@ -1,11 +1,12 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 var nodemailer = require('nodemailer');
-const { gerarTokenSimple } = require('./tokenController');
+const { gerarTokenWithExpireddataAndData } = require('./tokenController');
 const meusegredo = process.env.MEUSEGREDO;
 const emaillogin = process.env.EMAIL;
 const passwordlogin = process.env.PASSWORD;
 const baseUrl = process.env.BASEURL;
+const mailersendapikey = process.env.MAILERSEND_API_KEY;
 
 
 async function criarNovoUsuario(email, password, name) {
@@ -25,6 +26,24 @@ async function criarNovoUsuario(email, password, name) {
     return true;
   } catch (error) {
     console.log(error)
+    return false;
+  }
+}
+
+async function deletarUsuario(email) {
+  try {
+    // Encontre o usuário pelo e-mail no banco de dados
+    const user = await User.findOne({ email });
+
+    // Se o usuário existir, exclua-o
+    if (user) {
+      await user.remove();
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.log('Erro ao excluir usuário:', error);
     return false;
   }
 }
@@ -64,10 +83,8 @@ async function tragaTodosOsDados(email) {
 
 async function sendEmail(email, name) {
 
-
-
   // Gere um token único
-  const token = gerarTokenSimple(meusegredo)
+  const token = gerarTokenWithExpireddataAndData({'email':email},meusegredo,'24h')
 
   // Configure o transporte de e-mail (usando nodemailer, você precisa configurar um serviço de e-mail)
   const transporter = nodemailer.createTransport({
@@ -113,10 +130,14 @@ async function sendEmail(email, name) {
 
 
 
+
+
+
 module.exports = {
   sendEmail,
   criarNovoUsuario,
   verificarSeEmailExiste,
   verificarCredenciais,
   tragaTodosOsDados,
+  deletarUsuario
 };
