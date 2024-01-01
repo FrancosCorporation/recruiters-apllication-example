@@ -29,6 +29,7 @@ Certifique-se de ter a versão mais recente do Node.js e NPM instalada em seu si
 - npm i @mui/material @emotion/react @emotion/styled
 - npm i crypto-js
 - npm i react-slick slick-carousel ##
+- npm i validator 
 
 - Back-end: Node.js
 
@@ -36,7 +37,6 @@ Certifique-se de ter a versão mais recente do Node.js e NPM instalada em seu si
 
   All Dependencies
 
-- npm i google-auth-library
 - npm i express
 - npm i dotenv
 - npm i cloudinary
@@ -50,6 +50,7 @@ Certifique-se de ter a versão mais recente do Node.js e NPM instalada em seu si
 - npm i bson (convert more data)
 - npm i jsonwebtoken (Token)
 - npm i nodemailer (email sending)
+- npm install mailersend
 
 ### Utilização
 
