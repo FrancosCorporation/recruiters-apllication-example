@@ -10,7 +10,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Home from './pages/home';
 import Login from './pages/dados_de_usuarios/login';
 import SignUp from './pages/dados_de_usuarios/signup';
-import GeneralItems from './pages/generalitems';
+import {Generalitens} from './pages/generalitems';
 import PersonalItems from './pages/personalitems';
 import styled from 'styled-components';
 import logo from './images/logo.png';
@@ -64,14 +64,16 @@ const App = () => {
     setAnchorElPessoais(null);
   };
   const handleToggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+    if (localStorage.getItem('token') !== null & localStorage.getItem('token') !== '') {
+      setIsMenuOpen(!isMenuOpen);
+    }
   };
-  
+
   const handleMenuClose = () => {
     setIsMenuOpen(false);
   };
 
-  
+
 
   return (
     <Router>
@@ -131,31 +133,30 @@ const App = () => {
             </div>
           </StyledToolbar>
         </StyledAppBar>
-          <Outlet />
-    
-    
+        <Outlet />
 
-      {isMenuOpen && (<MenuLateral  isOpen={isMenuOpen} onClose={handleMenuClose} />)}
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/token" element={<ConfirmToken />} />
-        <Route path="/inscreva-se" element={<SignUp />} />
-        <Route path="/itens-gerais" element={<GeneralItems />}>
-          <Route path="listar" element={"<ListarItensGerais />"} />
-          <Route path="criar" element={"<CriarItensGerais />"} />
-        </Route>
-        <Route path="/itens-pessoais" element={<PersonalItems />}>
-          <Route path="listar" element={"<ListarItensPessoais />"} />
-          <Route path="criar" element={"<CriarItensPessoais />"} />
-        </Route>
-        <Route path="/perfil" element={<Perfil />} />
-      </Routes>
+        {isMenuOpen && (<MenuLateral isOpen={isMenuOpen} onClose={handleMenuClose} />)}
+
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/token" element={<ConfirmToken />} />
+          <Route path="/inscreva-se" element={<SignUp />} />
+          <Route path="/itens-gerais" element={<Generalitens />}>
+            <Route path="listar" element={"<ListarItensGerais />"} />
+            <Route path="criar" element={"<CriarItensGerais />"} />
+          </Route>
+          <Route path="/itens-pessoais" element={<PersonalItems />}>
+            <Route path="listar" element={"<ListarItensPessoais />"} />
+            <Route path="criar" element={"<CriarItensPessoais />"} />
+          </Route>
+          <Route path="/perfil" element={<Perfil />} />
+        </Routes>
       </div>
     </Router>
 
-    
+
   );
 };
 
