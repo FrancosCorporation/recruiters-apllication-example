@@ -1,0 +1,21 @@
+# dependências
+node_modules/
+
+# ambiente
+.env
+.env.local
+.env*.local
+
+# build
+build/
+dist/
+
+# logs
+*.log
+npm-debug.log*
+
+# sistema / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vercel
