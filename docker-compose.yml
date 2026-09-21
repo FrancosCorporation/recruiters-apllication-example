@@ -1,0 +1,19 @@
+services:
+  back-end:
+    build: ./back-end-example-code-online-store
+    container_name: recruiters-back-end
+    restart: unless-stopped
+    ports:
+      - "3211:8080"
+    environment:
+      - PORT=8080
+  front-end:
+    build: ./front-end-example-code-online-store
+    container_name: recruiters-front-end
+    restart: unless-stopped
+    ports:
+      - "3212:3000"
+    environment:
+      - PORT=3000
+    depends_on:
+      - back-end
