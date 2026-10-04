@@ -64,6 +64,7 @@ e perfil. Back-end Express + front React no mesmo repositório.
 | IMP-02 | Sem `PORT` validado / sem shutdown gracioso | **P2** | `index.js:21` | — |
 | IMP-03 | Front: `https-request.js` (chamada manual) sem tratamento de erro | **P2** | front | — |
 | TEST-01 | Zero testes no back (IDOR não detectável) | **P1** | *(ausente)* | SEC-01 |
+| SEC-07 | Front: **203 CVEs** (GitHub: 5 críticas) via `react-scripts 5.0.1` | **P1** | front `package.json:21` | — |
 | DEVOPS-01 | Sem CI | **P2** | *(ausente)* | — |
 | DEVOPS-02 | Sem `.env.example` | **P2** | *(ausente)* | — |
 | DOC-01 | README não cobre 2 apps no mesmo repo | **P3** | `README.md` | — |
@@ -303,6 +304,30 @@ e perfil. Back-end Express + front React no mesmo repositório.
 - **Aceite:** falha de login mostra mensagem clara; 401 redireciona para login.
 - **Verificação:** (manual) derrubar o back e clicar em login → mensagem clara, sem tela branca.
 
+### SEC-07 · Front: 203 CVEs (5 críticas) via `react-scripts 5.0.1` · [P1]
+
+- **Arquivo:** front `front-end-example-code-online-store/package.json:21`
+- **Evidência:** o **GitHub reportou ao push** (2026-10-03):
+  *"GitHub found 203 vulnerabilities on FrancosCorporation/recruiters-apllication-example's default
+  branch (5 critical, 97 high, 76 moderate, 25 low)"*. O front usa **`react-scripts: 5.0.1`** (a
+  árvore CRA antiga), que arrasta hundreds de transitive deps antigas.
+- **Impacto:** (a) **risco de supply chain**: `react-scripts`/`webpack`/dependências antigas com CVE
+  conhecida são executadas em tempo de **build** (e o output vai para produção); (b) mesmo sem
+  exploit direto agora, é dívida de segurança que o GitHub sinaliza a cada push; (c) `npm audit` no
+  back voltou vazio — as CVEs são **todas do front**.
+- **Mudança:** (1) **não** simplesmente rodar `npm audit fix --force` (pode quebrar o build CRA);
+  (2) avaliar migrar o front para **Vite** (mesmo caminho dos projetos novos desta conta — ex.:
+  `codespaces-react`, `game_farma`), que elimina a árvore do CRA; (3) se ficar no CRA, ao menos
+  pinar overrides para as transitive mais críticas; (4) rodar `npm audit` no CI como **alerta**
+  (não falhar imediatamente, enquanto migra).
+- **Aceite:** o número de CVEs cai drasticamente (ou o front migra para Vite) e o build passa.
+- **Verificação:**
+  ```bash
+  cd front-end-example-code-online-store
+  npm audit 2>&1 | tail -5     # depois deve mostrar bem menos
+  npm run build                # build continua funcionando
+  ```
+
 ---
 
 ## 5. Qualidade: testes
@@ -403,7 +428,8 @@ e perfil. Back-end Express + front React no mesmo repositório.
 11. **`IMP-03`** — centralizar client HTTP no front.
 
 ### Wave 4 — Operação (P2/P3)
-12. **`DEVOPS-01`** — CI (back + front); **`DEVOPS-02`** — `.env.example`.
+12. **`SEC-07`** — front: migrar do `react-scripts` ou pinar overrides (203 CVEs).
+13. **`DEVOPS-01`** — CI (back + front); **`DEVOPS-02`** — `.env.example`.
 13. **`DOC-01`**, **`DOC-02`**.
 
 **Dependências que não podem ser invertidas:**
@@ -456,6 +482,7 @@ que o `finally` apagaria) · `SEC-04` antes de `DOC-02` (a regra "token fora da 
 
 **Testes e infra**
 - [ ] `TEST-01` — `npm test` no back (≥ 5 casos) e falha se o IDOR voltar
+- [ ] `SEC-07` — CVEs do front reduzidas (ou migrado para Vite); build passa
 - [ ] `DEVOPS-01` — CI verde (back + front)
 - [ ] `DEVOPS-02` — `.env.example` com todas as variáveis
 
