@@ -1,19 +1,41 @@
 services:
+  mongo:
+    image: mongo:8
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   back-end:
     build: ./back-end-example-code-online-store
-    container_name: recruiters-back-end
     restart: unless-stopped
-    ports:
-      - "3211:8080"
+    env_file:
+      - ./back-end-example-code-online-store/.env
     environment:
-      - PORT=8080
+      HOST: 0.0.0.0
+      PORT: 8080
+      MONGO_URI: mongodb://mongo:27017/recruiters_example
+    ports:
+      - "127.0.0.1:3211:8080"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
   front-end:
-    build: ./front-end-example-code-online-store
-    container_name: recruiters-front-end
+    build:
+      context: ./front-end-example-code-online-store
+      args:
+        VITE_HTTPBASE: ${VITE_HTTPBASE:-http://localhost:3211}
     restart: unless-stopped
     ports:
-      - "3212:3000"
-    environment:
-      - PORT=3000
+      - "127.0.0.1:3212:80"
     depends_on:
       - back-end
+
+volumes:
+  mongo_data:

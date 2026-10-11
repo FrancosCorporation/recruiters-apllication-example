@@ -1,21 +1,15 @@
-# dependências
 node_modules/
-
-# ambiente
 .env
-.env.local
-.env*.local
-
-# build
-build/
-dist/
-
-# logs
+.env.*
+!.env.example
+**/node_modules/
+**/.env
+**/.env.*
+!**/.env.example
+**/dist/
+**/build/
+**/uploads/
+**/swagger_output.json
+.vercel/
 *.log
 npm-debug.log*
-
-# sistema / IDE
-.DS_Store
-Thumbs.db
-.idea/
-.vercel

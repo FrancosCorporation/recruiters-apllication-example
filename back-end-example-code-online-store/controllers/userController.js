@@ -1,143 +1,54 @@
-const bcrypt = require('bcryptjs');
-const User = require('../models/user');
-var nodemailer = require('nodemailer');
-const { gerarTokenWithExpireddataAndData } = require('./tokenController');
-const meusegredo = process.env.MEUSEGREDO;
-const emaillogin = process.env.EMAIL;
-const passwordlogin = process.env.PASSWORD;
-const baseUrl = process.env.BASEURL;
-const mailersendapikey = process.env.MAILERSEND_API_KEY;
+const crypto = require('node:crypto');
+const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const config = require('../config/env');
 
-
-async function criarNovoUsuario(email, password, name) {
-  try {
-    // Criar um hash da senha usando o bcrypt
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Crie o novo usuário com a senha criptografada
-    const newUser = new User({
-      email,
-      password: hashedPassword,
-      name,
-    });
-
-    // Salve o usuário no banco de dados
-    await newUser.save();
-    return true;
-  } catch (error) {
-    console.log(error)
-    return false;
-  }
-}
-
-async function deletarUsuario(email) {
-  try {
-    // Encontre o usuário pelo e-mail no banco de dados
-    const user = await User.findOne({ email });
-
-    // Se o usuário existir, exclua-o
-    if (user) {
-      await user.remove();
-      return true;
-    } else {
-      return false;
-    }
-  } catch (error) {
-    console.log('Erro ao excluir usuário:', error);
-    return false;
-  }
-}
-
-async function verificarSeEmailExiste(email) {
-  try {
-    return await User.findOne({ email }).select('+password');
-  } catch (error) {
-    console.log(error)
-    return null;
-  }
-}
-async function verificarCredenciais(senhaRequest, senhadb) {
-  try {
-    // Verifique a senha do usuário
-    return await bcrypt.compare(senhaRequest, senhadb);
-  } catch (error) {
-    console.log(error)
-    return false;
-  }
-}
-
-
-async function tragaTodosOsDados(email) {
-  try {
-    const user = await User.findOne({ email });
-    console.log(user)
-    return user;
-
-  } catch (error) {
-    console.log(error)
-    return false;
-  }
-}
-
-
-
-async function sendEmail(email, name) {
-
-  // Gere um token único
-  const token = gerarTokenWithExpireddataAndData({'email':email},meusegredo,'24h')
-
-  // Configure o transporte de e-mail (usando nodemailer, você precisa configurar um serviço de e-mail)
-  const transporter = nodemailer.createTransport({
+const transporter = config.emailLogin
+  ? nodemailer.createTransport({
     service: 'gmail',
-    //host: 'smtp.gmail.com',
-    //port: 587,
-    //port: 465,
-    auth: {
-      user: emaillogin,  // Substitua pelo seu nome de usuário
-      pass: passwordlogin,  // Substitua pela sua senha
-    },
-  });
+    auth: { user: config.emailLogin, pass: config.emailPassword },
+  })
+  : null;
 
-  // Construa o e-mail
-  const mailOptions = {
-    from: 'no-reply@gmail.com',
-    to: email,
-    subject: 'Ativação de conta',
-    html: `<p>Olá ${name}, clique no link abaixo para confirmar seu e-mail:</p><a href="${baseUrl}/token?token=${token}">Confirmar E-mail</a>`,
-  };
-
-
-  // An array of attachments
-  // attachments: [
-  //   {
-  //     filename: 'text notes.txt',
-  //     path: 'notes.txt'
-  //   },
-  //]
-
-  // Envie o e-mail
-  await transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error)
-      console.log('erro na hora de enviar o email')
-    }
-    else {
-      console.log('E-mail enviado com sucesso!');
-    }
-  });
-
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[character]);
 }
 
+async function sendActivationEmail(user) {
+  if (!transporter) {
+    const error = new Error('Activation email is not configured.');
+    error.code = 'EMAIL_NOT_CONFIGURED';
+    throw error;
+  }
 
+  const token = jwt.sign(
+    { email: user.email, purpose: 'email_activation' },
+    config.jwtSecret,
+    {
+      algorithm: 'HS256',
+      audience: config.jwtActivationAudience,
+      expiresIn: '1h',
+      issuer: config.jwtIssuer,
+      jwtid: crypto.randomUUID(),
+      subject: String(user._id),
+    },
+  );
+  const activationUrl = `${config.appBaseUrl}/token#token=${encodeURIComponent(token)}`;
+  const safeName = escapeHtml(user.name);
 
+  await transporter.sendMail({
+    from: config.emailLogin,
+    to: user.email,
+    subject: 'Ative sua conta',
+    text: `Olá ${user.name}, confirme seu e-mail neste link: ${activationUrl}`,
+    html: `<p>Olá ${safeName}, confirme seu e-mail para ativar sua conta.</p><p><a href="${activationUrl}">Ativar conta</a></p><p>O link expira em uma hora.</p>`,
+  });
+}
 
-
-
-module.exports = {
-  sendEmail,
-  criarNovoUsuario,
-  verificarSeEmailExiste,
-  verificarCredenciais,
-  tragaTodosOsDados,
-  deletarUsuario
-};
+module.exports = { sendActivationEmail };

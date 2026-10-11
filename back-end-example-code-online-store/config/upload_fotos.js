@@ -1,29 +1,44 @@
 const cloudinary = require('cloudinary').v2;
-const cloudinary_user = process.env.CLOUDINARY_USER;
-const cloudinary_secret = process.env.CLOUDINARY_SECRET;
-const cloudinary_key = process.env.CLOUDINARY_KEY;
+const config = require('./env');
 
-// Configuração do Cloudinary com suas credenciais
-cloudinary.config({
-  cloud_name: cloudinary_user,
-  api_key: cloudinary_key,
-  api_secret: cloudinary_secret
-});
+let configured = false;
 
-// Função para fazer o upload da foto no Cloudinary e retornar a URL
-async function uploadPhoto(file) {
-  try {
-    // Use o método .upload() do Cloudinary para fazer o upload da foto
-    const result = await cloudinary.uploader.upload(file, {
-      folder: 'fotos_usuarios_recruters_examples' // Pasta no Cloudinary para armazenar as fotos dos usuários
-    });
-
-    // A URL pública da foto estará em result.secure_url
-    return result.secure_url;
-  } catch (error) {
-    console.error('Erro ao fazer o upload da foto:', error);
+function configureCloudinary() {
+  if (!config.cloudinaryUser || !config.cloudinaryKey || !config.cloudinarySecret) {
+    const error = new Error('Cloudinary is not configured.');
+    error.code = 'CLOUDINARY_NOT_CONFIGURED';
     throw error;
   }
+
+  if (!configured) {
+    cloudinary.config({
+      cloud_name: config.cloudinaryUser,
+      api_key: config.cloudinaryKey,
+      api_secret: config.cloudinarySecret,
+      secure: true,
+    });
+    configured = true;
+  }
+}
+
+function uploadPhoto(buffer) {
+  configureCloudinary();
+
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'fotos_usuarios_recruters_examples', resource_type: 'image' },
+      (error, result) => {
+        if (error) {
+          return reject(error);
+        }
+        if (!result?.secure_url) {
+          return reject(new Error('Cloudinary returned no secure image URL.'));
+        }
+        return resolve(result.secure_url);
+      },
+    );
+    stream.end(buffer);
+  });
 }
 
 module.exports = uploadPhoto;

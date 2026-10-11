@@ -1,265 +1,279 @@
-const express = require('express')
-const router = express.Router()
-const User = require('../models/user');
-const fs = require('fs');
-const multer = require('multer')
+const crypto = require('node:crypto');
+const express = require('express');
+const { rateLimit } = require('express-rate-limit');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
-const { ObjectId } = mongoose.Types;
-const uploadPhoto = require('../config/upload_fotos')
+const multer = require('multer');
+const User = require('../models/user');
 const Comentario = require('../models/comentario');
 const authMiddleware = require('../controllers/authMiddleware');
-const { criarNovoUsuario, verificarSeEmailExiste, verificarCredenciais, sendEmail, deletarUsuario } = require('../controllers/userController');
-const { verifyTokenValid, gerarTokenWithExpireddataAndData } = require('../controllers/tokenController');
+const uploadPhoto = require('../config/upload_fotos');
+const { sendActivationEmail } = require('../controllers/userController');
+const config = require('../config/env');
 
-const meusegredo = process.env.MEUSEGREDO;
+const router = express.Router();
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const acceptedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const dummyPasswordHash = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 12);
 
+const loginLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { status: 429, msg: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.' },
+});
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { status: 429, msg: 'Muitas tentativas de cadastro. Tente novamente mais tarde.' },
+});
+const activationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { status: 429, msg: 'Muitas tentativas de ativação. Tente novamente mais tarde.' },
+});
+const photoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (req, file, callback) => callback(null, acceptedImageTypes.has(file.mimetype)),
+});
 
+router.post('/register', registerLimiter, async (req, res) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
 
+  if (!emailPattern.test(email) || email.length > 254 || password.length < 8 || password.length > 128 || !name || name.length > 100) {
+    return res.status(422).json({ status: 422, msg: 'Informe nome, e-mail válido e senha entre 8 e 128 caracteres.' });
+  }
+  if (!config.emailLogin || !config.emailPassword) {
+    return res.status(503).json({ status: 503, msg: 'O cadastro por e-mail está temporariamente indisponível.' });
+  }
 
-router.post('/register', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
-    // Verifique se todos os campos obrigatórios foram fornecidos
-    if (!email || !password || !name) {
-      return res.status(422).json({ msg: "Todos os campos obrigatórios devem ser fornecidos", status: 422, text: 'Unprocessable Entity' });
+    if (await User.exists({ email })) {
+      return res.status(409).json({ status: 409, msg: 'Usuário já existe.' });
     }
 
-    if (await verificarSeEmailExiste(email)) {
-      console.log("User try register :", req.body['email'])
-      return res.status(409).json({ msg: 'Usuário já existe', status: 409, text: 'Conflict' });
-    }
-    //registrando o usuario
-    if (criarNovoUsuario(email, password, name)) {
-      console.log("User Registrado :", req.body['email']);
-      //enviando email de confirmação !
-      //await sendEmail(email, name);
-      res.status(201).json({ msg: 'Usuário registrado com sucesso', status: 201, text: 'Create' });
-    }
-    else {
-      deletarUsuario(email)
-      res.status(500).json({ msg: 'Erro interno no servidor', status: 500, text: 'Internal Error' });
+    const user = await User.create({ email, name, password: await bcrypt.hash(password, 12), verify: false });
+    try {
+      await sendActivationEmail(user);
+    } catch (error) {
+      await user.deleteOne();
+      console.error('Activation email failed:', error?.name ?? 'UnknownError');
+      return res.status(503).json({ status: 503, msg: 'Não foi possível enviar o e-mail de ativação. Tente novamente mais tarde.' });
     }
 
-
-  } catch (err) {
-    console.log(err, ': ', req.body['email'])
-    deletarUsuario(email)
-    res.status(500).json({ msg: 'Erro ao registrar usuário', status: 500, text: 'Internal Error' });
+    return res.status(201).json({ status: 201, msg: 'Cadastro criado. Confira seu e-mail para ativar a conta.' });
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({ status: 409, msg: 'Usuário já existe.' });
+    }
+    console.error('Registration failed:', error?.name ?? 'UnknownError');
+    return res.status(500).json({ status: 500, msg: 'Não foi possível concluir o cadastro.' });
   }
 });
-router.post('/login', async (req, res) => {
+
+router.post('/login', loginLimiter, async (req, res) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+
   try {
-    const { email, password } = req.body;
-
-    // Verifique se o usuário existe na base de dados
-
-
-    const user = await verificarSeEmailExiste(email);
-
-    if (!user) {
-      return res.status(401).json({ msg: 'Credenciais inválidas' });
-    }
-
-
-    // Verifique se a senha do usuário foi fornecida
-    if (!password) {
-      return res.status(401).json({ msg: 'Credenciais inválidas' });
+    const user = email ? await User.findOne({ email }).select('+password') : null;
+    const validPassword = await bcrypt.compare(password || 'invalid-password', user?.password ?? dummyPasswordHash);
+    if (!user || !validPassword) {
+      return res.status(401).json({ status: 401, msg: 'Credenciais inválidas.' });
     }
     if (!user.verify) {
-      return res.status(401).json({ msg: 'Precisamos que confirme seu email, caso necessario olhe na caixa de spam!' });
+      return res.status(403).json({ status: 403, msg: 'Confirme seu e-mail para ativar a conta antes de entrar.' });
     }
 
-    if (await verificarCredenciais(password, user.password)) {
-      // gerando token JWT para o usuário autenticado
-      const token = gerarTokenWithExpireddataAndData({ 'Id': user.id }, meusegredo, '2h')
-      const dados = { name: user.name, email: user.email, foto: user.photoUrl }
-      // Retorne o token JWT para o cliente
-      res.status(200).json({ token, dados, msg: 'Obrigado pela verificação !' });
-    } else {
-      return res.status(401).json({ msg: 'Credenciais inválidas' });
-    }
+    const token = jwt.sign(
+      { userId: String(user._id), sub: String(user._id) },
+      config.jwtSecret,
+      { algorithm: 'HS256', audience: config.jwtAudience, expiresIn: '2h', issuer: config.jwtIssuer },
+    );
+    const dados = { name: user.name, email: user.email, foto: user.photoUrl };
+    return res.status(200).json({ status: 200, token, dados, msg: 'Login realizado com sucesso.' });
   } catch (error) {
-    res.status(500).json({ msg: 'Erro ao fazer login' });
+    console.error('Login failed:', error?.name ?? 'UnknownError');
+    return res.status(500).json({ status: 500, msg: 'Não foi possível fazer login.' });
   }
 });
 
-// Configuração do multer para o armazenamento temporário da foto
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, './uploads'); // Pasta onde os arquivos serão salvos temporariamente
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname); // Nome do arquivo no formato data-nomeOriginal
+router.post('/uploadPhotoProfile', authMiddleware, photoUpload.single('fotoPerfil'), async (req, res) => {
+  if (!req.file) {
+    return res.status(415).json({ status: 415, msg: 'Envie uma imagem JPEG, PNG ou WebP de até 5 MB.' });
   }
-});
 
-const upload = multer({ storage: storage });
-
-router.post('/uploadPhotoProfile', authMiddleware, upload.single('fotoPerfil'), async (req, res) => {
-
-
-  // Rota para fazer o upload da foto de perfil do usuário
   try {
-    if (!req.body.email) {
-      return res.status(406).json({ status: 406, msg: 'Campo email é obrigatório' });
+    const { fileTypeFromBuffer } = await import('file-type');
+    const detectedType = await fileTypeFromBuffer(req.file.buffer);
+    if (!detectedType || !acceptedImageTypes.has(detectedType.mime)) {
+      return res.status(415).json({ status: 415, msg: 'O conteúdo do arquivo não é uma imagem aceita.' });
     }
-    // Verifique se o usuário existe no banco de dados
-    const user = await User.findOne({ email: req.body.email });
+
+    const user = await User.findById(req.user.userId);
     if (!user) {
-      return res.status(404).json({ status: 404, msg: 'Usuário não encontrado' });
+      return res.status(404).json({ status: 404, msg: 'Usuário não encontrado.' });
     }
 
-    // Verifique se a foto de perfil foi fornecida na requisição
-    if (!req.file) {
-      return res.status(400).json({ status: 400, msg: 'Foto de perfil não fornecida' });
-    }
-
-    const tempPath = req.file.path;
-    // Verifique se o arquivo é uma imagem válida
-
-
-    // Enviar a foto para o Cloudinary
-    const photoUrl = await uploadPhoto(tempPath);
-
-    // Apagar a foto temporária do servidor para liberar espaço
-    fs.unlinkSync(tempPath);
-
-    // Atualizar o campo "photoUrl" no usuário no banco de dados com a URL da foto no Cloudinary
-    user.photoUrl = photoUrl;
+    user.photoUrl = await uploadPhoto(req.file.buffer);
     await user.save();
-
-    return res.status(200).json({ status: 200, msg: 'Upload da foto de perfil concluído' });
+    return res.status(200).json({ status: 200, msg: 'Upload da foto de perfil concluído.' });
   } catch (error) {
-    console.error('Erro ao fazer o upload da foto:', error);
-    return res.status(500).json({ status: 500, msg: 'Erro ao fazer o upload da foto' });
+    if (error?.code === 'CLOUDINARY_NOT_CONFIGURED') {
+      return res.status(503).json({ status: 503, msg: 'O serviço de imagens não está configurado.' });
+    }
+    console.error('Profile photo upload failed:', error?.name ?? 'UnknownError');
+    return res.status(502).json({ status: 502, msg: 'Não foi possível salvar a foto de perfil.' });
   }
-
 });
 
 router.post('/putProfile', authMiddleware, async (req, res) => {
-  // Rota para mudar alterações do nome, email e senha
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const name = typeof req.body?.nome === 'string' ? req.body.nome.trim() : '';
+  const password = typeof req.body?.senha === 'string' ? req.body.senha : '';
+  if (!emailPattern.test(email) || email.length > 254 || !name || name.length > 100 || (password && (password.length < 8 || password.length > 128))) {
+    return res.status(422).json({ status: 422, msg: 'Informe nome válido, e-mail válido e, se alterar a senha, use 8 a 128 caracteres.' });
+  }
+
   try {
-    const user = await User.findOne({ _id: req.user.Id });
-
-    if (req.body.email && req.body.senha && req.body.nome) {
-      // Atualiza os campos no documento do usuário
-      user.email = req.body.email;
-      user.name = req.body.nome;
-      user.password = req.body.senha;
-
-      // Aguarda a conclusão da operação de save antes de enviar uma resposta
-      await user.save();
-
-      return res.status(200).json({ status: 200, msg: `Alterações no usuário ${user.name} foram feitas com sucesso!` });
-    } else {
-      return res.status(406).json({ status: 406, msg: 'Faltam campos a serem preenchidos!' });
+    const user = await User.findById(req.user.userId).select('+password');
+    if (!user) {
+      return res.status(404).json({ status: 404, msg: 'Usuário não encontrado.' });
     }
+
+    const emailChanged = email !== user.email;
+    if (emailChanged && await User.exists({ email, _id: { $ne: user._id } })) {
+      return res.status(409).json({ status: 409, msg: 'Este e-mail já está em uso.' });
+    }
+    if (emailChanged && (!config.emailLogin || !config.emailPassword)) {
+      return res.status(503).json({ status: 503, msg: 'A alteração de e-mail está temporariamente indisponível.' });
+    }
+    if (emailChanged) {
+      await sendActivationEmail({ ...user.toObject(), email, name });
+    }
+
+    user.name = name;
+    user.email = email;
+    if (password) {
+      user.password = await bcrypt.hash(password, 12);
+    }
+    if (emailChanged) {
+      user.verify = false;
+    }
+    await user.save();
+
+    const dados = { name: user.name, email: user.email, foto: user.photoUrl };
+    if (emailChanged) {
+      return res.status(200).json({ status: 200, dados, requiresVerification: true, msg: 'Confira o novo e-mail para continuar usando a conta.' });
+    }
+    return res.status(200).json({ status: 200, dados, msg: 'Perfil atualizado com sucesso.' });
   } catch (error) {
-    console.error('Erro ao fazer alterações no usuário:' + req.body.nome, error);
-    return res.status(500).json({ status: 500, msg: 'Erro ao fazer alterações no usuário:' + req.body.nome });
+    if (error?.code === 11000) {
+      return res.status(409).json({ status: 409, msg: 'Este e-mail já está em uso.' });
+    }
+    console.error('Profile update failed:', error?.name ?? 'UnknownError');
+    return res.status(500).json({ status: 500, msg: 'Não foi possível atualizar o perfil.' });
+  }
+});
+
+router.post('/token', activationLimiter, async (req, res) => {
+  const token = typeof req.body?.token === 'string' ? req.body.token.trim() : '';
+  if (!token) {
+    return res.status(400).json({ status: 400, msg: 'Token de ativação inválido.' });
+  }
+
+  let claims;
+  try {
+    claims = jwt.verify(token, config.jwtSecret, {
+      algorithms: ['HS256'],
+      audience: config.jwtActivationAudience,
+      issuer: config.jwtIssuer,
+    });
+  } catch {
+    return res.status(400).json({ status: 400, msg: 'Token de ativação inválido ou expirado.' });
+  }
+  if (typeof claims === 'string' || claims.purpose !== 'email_activation' || typeof claims.email !== 'string' || typeof claims.sub !== 'string') {
+    return res.status(400).json({ status: 400, msg: 'Token de ativação inválido ou expirado.' });
+  }
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { _id: claims.sub, email: claims.email, verify: false },
+      { $set: { verify: true } },
+      { new: true },
+    );
+    if (!user) {
+      return res.status(400).json({ status: 400, msg: 'Token de ativação inválido, expirado ou já utilizado.' });
+    }
+    return res.status(200).json({ status: 200, msg: 'Conta ativada. Agora você pode entrar.' });
+  } catch (error) {
+    console.error('Account activation failed:', error?.name ?? 'UnknownError');
+    return res.status(503).json({ status: 503, msg: 'Não foi possível ativar a conta. Tente novamente mais tarde.' });
   }
 });
 
 router.post('/comentarios', authMiddleware, async (req, res) => {
+  const content = typeof req.body?.conteudo === 'string' ? req.body.conteudo.trim() : '';
+  const rawRating = req.body?.avaliacao;
+  const rating = typeof rawRating === 'string' ? Number(rawRating.replace(',', '.')) : rawRating;
+  if (!content || content.length > 2000) {
+    return res.status(400).json({ status: 400, msg: 'O comentário é obrigatório e deve ter até 2000 caracteres.' });
+  }
+  if (typeof rating !== 'number' || !Number.isFinite(rating) || rating < 1 || rating > 5) {
+    return res.status(400).json({ status: 400, msg: 'A avaliação deve ser um número entre 1 e 5.' });
+  }
+
   try {
-    const { conteudo, avaliacao } = req.body;
-    var avaliacaoDecimal = "";
-    const usuario = req.user.userId; // O usuário autenticado está disponível em req.user
-    // Verifique se o conteúdo está presente no corpo da requisição
-    if (!conteudo) {
-      return res.status(400).json({ msg: 'Campo conteudo é obrigatório.' });
+    const userExists = await User.exists({ _id: req.user.userId });
+    if (!userExists) {
+      return res.status(404).json({ status: 404, msg: 'Usuário não encontrado.' });
     }
-
-    // Verifique se a avaliação está presente no corpo da requisição
-    if (!avaliacao) {
-      return res.status(400).json({ msg: 'Campo avaliacao é obrigatório' });
-    }
-    if (typeof avaliacao == "string") {
-      // Converta a vírgula em ponto na avaliação (caso exista)
-      avaliacaoDecimal = parseFloat(avaliacao.replace(',', '.'));
-      // Verifique se a avaliação é um número válido entre 1 e 5
-      if (isNaN(avaliacaoDecimal) || avaliacaoDecimal < 1 || avaliacaoDecimal > 5) {
-        return res.status(400).json({ msg: 'Avaliação inválida. A avaliação deve estar entre 1 e 5.' });
-      }
-    }
-    if (typeof avaliacao == "number") {
-      if (avaliacao < 1 || avaliacao > 5) {
-        return res.status(400).json({ msg: 'Avaliação inválida. A avaliação deve estar entre 1 e 5.' });
-      }
-    }
-
-    // Crie o novo comentário
-    const novoComentario = new Comentario({
-      usuario,
-      conteudo,
-      avaliacao: avaliacaoDecimal == "" ? avaliacao : avaliacaoDecimal // Use a avaliação decimal aqui , verificando se existem valores no avaliacaoDecimal
+    const comentario = await Comentario.create({
+      usuario: req.user.userId,
+      conteudo: content,
+      avaliacao: mongoose.Types.Decimal128.fromString(String(rating)),
     });
-
-    // Salve o comentário no banco de dados
-    const comentarioSalvo = await novoComentario.save();
-
-    res.status(201).json(comentarioSalvo);
+    return res.status(201).json({ status: 201, comentario, msg: 'Comentário publicado.' });
   } catch (error) {
-    if (error.message.includes('Unexpected number in JSON')) {
-      console.error(error)
-      return res.status(400).json({ msg: 'JSON inválido. Verifique a sintaxe dos campos numéricos.' });
-    } else {
-      // Outros erros não esperados
-      console.error(error)
-      return res.status(500).json({ msg: 'Erro interno do servidor.' });
-    }
+    console.error('Comment creation failed:', error?.name ?? 'UnknownError');
+    return res.status(500).json({ status: 500, msg: 'Não foi possível publicar o comentário.' });
   }
 });
 
-router.post('/token', async (req, res) => {
-  try {
-    const { token } = req.body;
-    const validity = verifyTokenValid(token, meusegredo)
-    if (validity !== null) {
-      const email = validity.email
-      const user = await User.findOne({ email });
-      user.verify = true
-      await user.save();
-
-      return res.status(200).json({ msg: 'Ativação da conta foi um sucesso! 🎉 Faça Login !' });
-    }
-    else {
-      return res.status(400).json({ msg: 'Token inválido. Entre em contato com o suporte !' });
-    }
-  } catch (error) {
-    return res.status(500).json({ msg: 'Erro interno do servidor.' });
-  }
-});
-
-// Rota para obter todos os comentários
 router.get('/comentarios', async (req, res) => {
+  const page = Number(req.query.page ?? 1);
+  const limit = Number(req.query.limit ?? 50);
+  if (!Number.isInteger(page) || page < 1 || page > 10000 || !Number.isInteger(limit) || limit < 1 || limit > 50) {
+    return res.status(400).json({ status: 400, msg: 'Use page >= 1 e limit entre 1 e 50.' });
+  }
+
   try {
-    // Consulte o banco de dados para obter todos os comentários
-    const comentarios = await Comentario.find();
-
-    // Crie uma lista para armazenar os comentários com os nomes de usuário
-    const comentariosComNomes = [];
-
-    // Para cada comentário, encontre o nome do usuário associado
-    for (const comentario of comentarios) {
-      const usuario = await User.findById(comentario.usuario); // Supondo que o campo do usuário seja um ID
-      if (usuario) {
-        const comentarioComNome = {
-          nome: usuario.name, // Adicione o nome do usuário ao resultado
-          comentario: comentario.conteudo,
-          avaliacao: comentario.avaliacao.toString(),
-          foto: usuario.photoUrl
-        };
-        comentariosComNomes.push(comentarioComNome);
-      }
-    }
-
-    res.status(200).json(comentariosComNomes);
+    const comments = await Comentario.find()
+      .sort({ dataCriacao: -1, _id: 1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate('usuario', 'name photoUrl')
+      .lean();
+    const feed = comments.filter((comment) => comment.usuario).map((comment) => ({
+      nome: comment.usuario.name,
+      comentario: comment.conteudo,
+      avaliacao: comment.avaliacao.toString(),
+      foto: comment.usuario.photoUrl,
+    }));
+    return res.status(200).json(feed);
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ msg: 'Erro interno do servidor.' });
+    console.error('Comment listing failed:', error?.name ?? 'UnknownError');
+    return res.status(500).json({ status: 500, msg: 'Não foi possível carregar os comentários.' });
   }
 });
 
-
-module.exports = app => app.use(router)
+module.exports = (app) => app.use(router);

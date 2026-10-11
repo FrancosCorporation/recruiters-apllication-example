@@ -1,118 +1,124 @@
-# recruiters-apllication-example
+# Recruiters Application Example
 
-Aplicação de exemplo full stack (loja online fictícia) com back-end Node.js/Express/MongoDB e front-end React, criada em novembro de 2023 para demonstrar práticas de autenticação, segurança, upload de imagens e documentação de API.
+Exemplo full stack de uma loja online fictícia, com uma API para contas,
+ativação de e-mail, perfil, fotos e comentários, e uma interface React.
 
-![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=flat&logo=node.js&logoColor=white)
-![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)
-![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?style=flat&logo=mongodb&logoColor=white)
-![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-green)
-![Status](https://img.shields.io/badge/status-exemplo%20de%20portf%C3%B3lio-blue)
+## Componentes
 
-## Sobre
+- `back-end-example-code-online-store`: Node.js 24, Express, MongoDB, JWT,
+  bcrypt, envio de e-mail por Gmail/Nodemailer, Cloudinary e Swagger.
+- `front-end-example-code-online-store`: React 19 e Vite; login, cadastro,
+  ativação da conta, perfil e páginas de exemplo.
 
-Monorepo com dois projetos independentes que conversam entre si:
+As páginas de catálogo ainda são demonstrações e informam quando uma função não
+está conectada a uma API.
 
-- `back-end-example-code-online-store` — API REST com cadastro/login de usuários, senhas com bcrypt, tokens JWT, confirmação de conta por e-mail, upload de foto no Cloudinary, comentários e Swagger;
-- `front-end-example-code-online-store` — SPA em React com telas de login, cadastro, confirmação de token, perfil, menu lateral e itens gerais/pessoais, consumindo a API com `fetch` e guardando dados criptografados no navegador.
+## Configuração local
 
-O nome "empresa-do-ben" aparece na base MongoDB: é um cenário fictício de loja.
-
-Deploy de referência (Vercel):
-
-- Front-end: https://recruiters-apllication-example.vercel.app/
-- Back-end: https://recruiters-apllication-example-backend.vercel.app/
-
-## Funcionalidades
-
-Comprovadas pelo código:
-
-- **Back-end**
-  - `GET /` — resposta de sanidade (`{ "home": "home" }`);
-  - `POST /register` — valida campos, verifica e-mail duplicado e cria usuário com hash bcrypt (`routes/userRoutes.js`, `controllers/userController.js`);
-  - `POST /login` — valida credenciais e emite JWT com validade de 2h (`routes/userRoutes.js`);
-  - Middleware de autenticação por `Authorization: Bearer <token>` (`controllers/authMiddleware.js`);
-  - Confirmação de conta por e-mail com token JWT (`sendEmail` em `controllers/userController.js` — chamada comentada nas rotas);
-  - Upload de imagens para o Cloudinary (`config/upload_fotos.js` com `multer`);
-  - Modelo de comentários com nota de 1 a 5 (`models/comentario.js`);
-  - Documentação Swagger servida em `/api-docs` (`swagger_output.json` gerado com `swagger-autogen`);
-  - CORS habilitado para todas as rotas.
-- **Front-end**
-  - Rotas com React Router: Home, Login, Cadastro, Confirmar Token, Itens Gerais, Itens Pessoais e Perfil (`src/App.js`);
-  - Criptografia AES no cliente com `crypto-js` antes de gravar dados no navegador (`src/pages/functions/security.js`);
-  - Requisições HTTP padronizadas com suporte a token Bearer (`src/pages/functions/https-request.js`);
-  - Interface com MUI, Bootstrap e styled-components; carrossel com `react-slick`; validação com `validator`.
-
-## Stack
-
-- **Back-end:** Node.js, Express 4, MongoDB + Mongoose 7, bcryptjs, jsonwebtoken, Cloudinary, Multer, Nodemailer, Swagger (swagger-autogen + swagger-ui-express), dotenv, CORS
-- **Front-end:** React 18 (Create React App 5), React Router 6, MUI 5, Bootstrap 5, styled-components, crypto-js, react-slick, validator
-
-## Como rodar
-
-Pré-requisitos do autor: Node.js v20.9.0 e NPM v10.1.0.
-
-### Back-end
+Instale Node.js 24 e npm 10 ou superior. Prepare as variáveis dos dois apps:
 
 ```bash
-cd back-end-example-code-online-store
-npm install
-cp .env.example .env   # preencha as variáveis (ver abaixo)
-npm start              # nodemon index.js — porta definida em PORT
+cp back-end-example-code-online-store/.env.example back-end-example-code-online-store/.env
+cp front-end-example-code-online-store/.env.example front-end-example-code-online-store/.env
+openssl rand -hex 32
 ```
 
-Variáveis do back-end (`.env.example` na pasta): `DB_USER`, `DB_PASSWORD`, `DB_NAME` (MongoDB Atlas/local), `MEUSEGREDO` (segredo JWT), `EMAIL`, `PASSWORD` (conta de envio Gmail), `MAILERSEND_API_KEY`, `BASEURL`, `PORT`, `CLOUDINARY_USER`, `CLOUDINARY_KEY`, `CLOUDINARY_SECRET`.
+Coloque o valor aleatório em `JWT_SECRET` no `.env` do back-end. Configure
+`MONGO_URI` para um MongoDB local ou gerenciado. Para cadastrar contas e enviar
+links de ativação, preencha `EMAIL_LOGIN` com a conta Gmail e `EMAIL_PASSWORD`
+com uma senha de app dedicada. Defina `APP_BASE_URL` como o endereço do
+front-end e `CORS_ORIGINS` com essa origem. Em desenvolvimento, o back-end pode
+iniciar sem e-mail, mas o cadastro responderá que o serviço está indisponível
+até essas duas variáveis serem configuradas.
 
-### Front-end
-
-```bash
-cd front-end-example-code-online-store
-npm install
-cp .env.example .env   # REACT_APP_HTTPBASE e REACT_APP_SECRET_KEY
-npm start              # http://localhost:3000
-```
-
-### Tudo junto (raiz do repositório)
-
-O `package.json` da raiz sobe os dois processos em paralelo:
+O front usa `VITE_HTTPBASE=http://localhost:3211` por padrão local. Instale e
+inicie os três diretórios:
 
 ```bash
+npm ci
+npm ci --prefix back-end-example-code-online-store
+npm ci --prefix front-end-example-code-online-store
 npm start
 ```
 
-No Linux, garanta permissão de leitura/escrita nas pastas do projeto antes de rodar.
+O painel abre em `http://localhost:3212`, a API em `http://localhost:3001` se
+iniciada diretamente e a documentação Swagger em `/api-docs`. O comando raiz
+inicia API e front juntos; o back-end encerra com erro se MongoDB não estiver
+acessível.
 
-## Estrutura do projeto
+## Docker Compose
 
-```
-.
-├── back-end-example-code-online-store/
-│   ├── config/               # conexão Mongo + upload Cloudinary
-│   ├── controllers/          # authMiddleware, tokenController, userController
-│   ├── models/               # user, comentario
-│   ├── routes/               # userRoutes, postRoutes
-│   ├── index.js              # Express, CORS, Swagger, listen
-│   ├── swagger.js            # gerador da documentação
-│   └── vercel.json           # configuração de deploy
-├── front-end-example-code-online-store/
-│   ├── public/
-│   └── src/
-│       ├── pages/            # telas, funções e CSS por página
-│       ├── images/ + fonts/
-│       └── App.js
-└── package.json              # script que roda os dois projetos
+Depois de configurar o `.env` do back-end conforme acima:
+
+```bash
+docker compose up --build -d
 ```
 
-## Observações
+O front fica em `http://localhost:3212` e a API em `http://localhost:3211`. Os
+serviços web são publicados somente no loopback da máquina; o MongoDB usa um
+volume persistente e não publica porta no host.
 
-- `controllers/funcoesinuteis.js` está vazio (nome mantido do estudo); inofensivo, mas pode ser removido em uma limpeza futura.
-- O envio de e-mail está implementado no `userController`, porém a chamada está comentada em `routes/userRoutes.js` — para testar o fluxo completo de confirmação, reative-a.
-- Existem trechos comentados em `index.js` com configurações pessoais de desenvolvimento; revise-os antes de publicar/forquear o projeto.
-- O `swagger_output.json` aponta `host: localhost:3000`; regenere com `swagger.js` se a porta mudar.
+## Variáveis do back-end
+
+| Variável | Obrigatória | Uso |
+|---|---|---|
+| `JWT_SECRET` | Sim | Segredo aleatório de pelo menos 32 bytes. |
+| `MONGO_URI` | Sim | URI MongoDB; no Compose é substituída pela rede interna. |
+| `EMAIL_LOGIN` / `EMAIL_PASSWORD` | Produção e cadastro | Conta Gmail e senha de app para enviar ativação. |
+| `APP_BASE_URL` | Não | Origem do front usada no link de ativação; produção exige HTTPS. |
+| `CORS_ORIGINS` | Não | Lista de origens do navegador separadas por vírgula. |
+| `CLOUDINARY_USER`, `CLOUDINARY_KEY`, `CLOUDINARY_SECRET` | Upload | Credenciais Cloudinary; necessárias apenas para fotos. |
+| `PORT`, `HOST` | Não | Porta e interface HTTP; padrões `3001` e `127.0.0.1`. |
+| `TRUST_PROXY` | Não | Use `1` somente atrás de um proxy confiável. |
+
+O `.env.example` do front só contém `VITE_HTTPBASE`, a URL pública da API. As
+variáveis `VITE_*` são incluídas no bundle do navegador; não coloque segredos
+nelas.
+
+## Contas e segurança
+
+O cadastro envia um link de ativação com validade de uma hora. O token viaja no
+fragmento `#token=` da URL e é enviado ao back-end no corpo de `POST /token`; o
+fragmento não é enviado ao servidor web nem em cabeçalhos Referer. A ativação
+só pode ser usada uma vez.
+
+O JWT fica em `sessionStorage` durante a sessão do navegador. A antiga
+criptografia no cliente foi removida: a chave também era entregue ao navegador
+e não protegia o conteúdo. Ao fechar a sessão, entre novamente.
+
+As rotas protegidas usam `Authorization: Bearer <token>`. Upload aceita JPEG,
+PNG e WebP até 5 MB e usa somente a identidade do token. O feed público mantém
+nome, comentário, avaliação e foto, com paginação de até 50 registros.
+
+## Rotas principais
+
+- `POST /register` e `POST /login`
+- `POST /token` para ativar conta
+- `POST /uploadPhotoProfile` para atualizar foto
+- `POST /putProfile` para atualizar perfil
+- `GET /comentarios` e `POST /comentarios`
+- `GET /health` e `GET /api-docs`
+
+## Deploy
+
+O front e o back podem ser implantados separadamente na Vercel. Configure a raiz
+do projeto para a pasta de cada app. No front, defina `VITE_HTTPBASE` com a URL
+pública da API antes do build. No back, configure `JWT_SECRET`, `MONGO_URI`,
+`EMAIL_LOGIN`, `EMAIL_PASSWORD`, `APP_BASE_URL` HTTPS, `CORS_ORIGINS` e as
+credenciais Cloudinary se necessárias no painel de variáveis do projeto.
+
+## Build, audit e testes
+
+- `npm run build --prefix back-end-example-code-online-store` gera o OpenAPI.
+- `npm run build --prefix front-end-example-code-online-store` gera `dist/`.
+- `npm audit --prefix back-end-example-code-online-store` e o mesmo comando no front verificam dependências.
+- A CI instala ambos os lockfiles, compila os dois apps e roda o audit.
+
+O repositório ainda não tem testes automatizados de integração. Nenhuma suíte
+de testes foi executada nesta atualização.
+
+Consulte [SECURITY.md](SECURITY.md) para reportar vulnerabilidades.
 
 ## Licença
 
-MIT — veja [LICENSE](LICENSE).
-
-## Autor
-
-Rodolfo Franco — [github.com/FrancosCorporation](https://github.com/FrancosCorporation)
+MIT — consulte [LICENSE](LICENSE).

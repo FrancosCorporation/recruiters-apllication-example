@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
-const { Schema } = mongoose;
 
-const comentarioSchema = new Schema({
+const comentarioSchema = new mongoose.Schema({
   usuario: {
     type: String,
     ref: 'user',
@@ -10,6 +9,8 @@ const comentarioSchema = new Schema({
   conteudo: {
     type: String,
     required: true,
+    trim: true,
+    maxlength: 2000,
   },
   dataCriacao: {
     type: Date,
@@ -23,6 +24,6 @@ const comentarioSchema = new Schema({
   },
 });
 
-const Comentario = mongoose.model('Comentario', comentarioSchema);
+comentarioSchema.index({ dataCriacao: -1, _id: 1 });
 
-module.exports = Comentario;
+module.exports = mongoose.model('Comentario', comentarioSchema);
